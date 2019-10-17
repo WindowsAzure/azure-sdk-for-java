@@ -172,7 +172,7 @@ BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
 
 Create a BlobContainerClient if a BlobServiceClient exists.
 ```java
-BlobContainerClient blobContainerClient = blobServiceClient.getContainerClient("mycontainer");
+BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient("mycontainer");
 ```
 
 or
@@ -190,7 +190,7 @@ BlobContainerClient blobContainerClient = new BlobContainerClientBuilder()
 
 Create a BlobClient if container client exists.
 ```java
-BlobClient blobClient = blobContainerClient.getBlobClient("myblob").getBlockBlobClient();
+BlobClient blobClient = blobContainerClient.getBlobClient("myblob");
 ```
 
 or
@@ -209,7 +209,7 @@ BlobClient blobClient = new BlobClientBuilder()
 
 Create a container from a BlobServiceClient.
 ```java
-blobServiceClient.createContainer("mycontainer");
+blobServiceClient.createBlobContainer("mycontainer");
 ```
 
 or
@@ -217,6 +217,15 @@ or
 Create a container using BlobContainerClient.
 ```java
 blobContainerClient.create();
+```
+
+Get an existing container, or create a new one if it doesn't exist
+```
+BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
+if(!blobContainerClient.exists()){
+    //Container does not exist so create it
+    blobContainerClient = blobServiceClient.createBlobContainer(containerName);
+}
 ```
 
 ### Uploading a blob from a stream
@@ -233,12 +242,12 @@ try (ByteArrayInputStream dataStream = new ByteArrayInputStream(dataSample.getBy
 
 ### Uploading a blob from `File`
 
-Upload a file to a blob using BlockBlobClient generated from BlobContainerClient.
+Upload a file to a blob using BlobClient generated from BlobContainerClient.
 
 ```java
 
-BlockBlobClient blockBlobClient = containerClient.getBlobClient("myblockblob").getBlockBlobClient();
-blockBlobClient.uploadFromFile("local-file.jpg");
+BlobClient blobClient = blobContainerClient.getBlobClient("myblockblob");
+blobClient.uploadFromFile("local-file.jpg");
 ```
 
 ### Downloading a blob to output stream
