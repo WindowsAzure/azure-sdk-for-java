@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation.query;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.implementation.routing.PartitionKeyInternal;
 import com.azure.cosmos.implementation.routing.PartitionKeyRangeIdentity;
 import com.azure.cosmos.BridgeInternal;
@@ -65,7 +66,7 @@ implements IDocumentQueryExecutionContext<T> {
     @Override
     abstract public Flux<FeedResponse<T>> executeAsync();
 
-    public RxDocumentServiceRequest createDocumentServiceRequest(Map<String, String> requestHeaders,
+    public RxDocumentServiceRequest createDocumentServiceRequest(HttpHeaders requestHeaders,
                                                                  SqlQuerySpec querySpec,
                                                                  PartitionKeyInternal partitionKey) {
 
@@ -78,7 +79,7 @@ implements IDocumentQueryExecutionContext<T> {
         return request;
     }
 
-    protected RxDocumentServiceRequest createDocumentServiceRequest(Map<String, String> requestHeaders,
+    protected RxDocumentServiceRequest createDocumentServiceRequest(HttpHeaders requestHeaders,
                                                                     SqlQuerySpec querySpec,
                                                                     PartitionKeyInternal partitionKeyInternal,
                                                                     PartitionKeyRange targetRange,
@@ -123,8 +124,8 @@ implements IDocumentQueryExecutionContext<T> {
         return this.client.executeQueryAsync(request);
     }
 
-    public Map<String, String> createCommonHeadersAsync(FeedOptions feedOptions) {
-        Map<String, String> requestHeaders = new HashMap<>();
+    public HttpHeaders createCommonHeadersAsync(FeedOptions feedOptions) {
+        HttpHeaders requestHeaders = new HttpHeaders();
 
         ConsistencyLevel defaultConsistencyLevel = this.client.getDefaultConsistencyLevelAsync();
         ConsistencyLevel desiredConsistencyLevel = this.client.getDesiredConsistencyLevelAsync();
@@ -146,33 +147,33 @@ implements IDocumentQueryExecutionContext<T> {
                 // irrespective of the chosen replica.
                 // For server resources, which don't span partitions, specify the session token
                 // for correct replica to be chosen for servicing the query result.
-                requestHeaders.put(HttpConstants.HttpHeaders.SESSION_TOKEN, feedOptions.getSessionToken());
+                requestHeaders.put(HttpConstants.Headers.SESSION_TOKEN, feedOptions.getSessionToken());
             }
         }
 
-        requestHeaders.put(HttpConstants.HttpHeaders.CONTINUATION, feedOptions.getRequestContinuation());
-        requestHeaders.put(HttpConstants.HttpHeaders.IS_QUERY, Strings.toString(true));
+        requestHeaders.put(HttpConstants.Headers.CONTINUATION, feedOptions.getRequestContinuation());
+        requestHeaders.put(HttpConstants.Headers.IS_QUERY, Strings.toString(true));
 
         // Flow the pageSize only when we are not doing client eval
         if (feedOptions.getMaxItemCount() != null && feedOptions.getMaxItemCount() > 0) {
-            requestHeaders.put(HttpConstants.HttpHeaders.PAGE_SIZE, Strings.toString(feedOptions.getMaxItemCount()));
+            requestHeaders.put(HttpConstants.Headers.PAGE_SIZE, Strings.toString(feedOptions.getMaxItemCount()));
         }
 
         if (feedOptions.getMaxDegreeOfParallelism() != 0) {
-            requestHeaders.put(HttpConstants.HttpHeaders.PARALLELIZE_CROSS_PARTITION_QUERY, Strings.toString(true));
+            requestHeaders.put(HttpConstants.Headers.PARALLELIZE_CROSS_PARTITION_QUERY, Strings.toString(true));
         }
 
         if (this.feedOptions.setResponseContinuationTokenLimitInKb() > 0) {
-            requestHeaders.put(HttpConstants.HttpHeaders.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB,
+            requestHeaders.put(HttpConstants.Headers.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB,
                     Strings.toString(feedOptions.setResponseContinuationTokenLimitInKb()));
         }
 
         if (desiredConsistencyLevel != null) {
-            requestHeaders.put(HttpConstants.HttpHeaders.CONSISTENCY_LEVEL, desiredConsistencyLevel.toString());
+            requestHeaders.put(HttpConstants.Headers.CONSISTENCY_LEVEL, desiredConsistencyLevel.toString());
         }
 
         if(feedOptions.isQueryMetricsEnabled()){
-            requestHeaders.put(HttpConstants.HttpHeaders.POPULATE_QUERY_METRICS, String.valueOf(feedOptions.isQueryMetricsEnabled()));
+            requestHeaders.put(HttpConstants.Headers.POPULATE_QUERY_METRICS, String.valueOf(feedOptions.isQueryMetricsEnabled()));
         }
 
         return requestHeaders;
@@ -186,7 +187,7 @@ implements IDocumentQueryExecutionContext<T> {
         if (this.resourceTypeEnum.isPartitioned()) {
             if (partitionKey != null) {
                 request.setPartitionKeyInternal(partitionKey);
-                request.getHeaders().put(HttpConstants.HttpHeaders.PARTITION_KEY, partitionKey.toJson());
+                request.getHeaders().put(HttpConstants.Headers.PARTITION_KEY, partitionKey.toJson());
             }
         }
     }
@@ -202,14 +203,14 @@ implements IDocumentQueryExecutionContext<T> {
         }
 
         if (this.resourceTypeEnum.isPartitioned()) {
-            boolean hasPartitionKey = request.getHeaders().get(HttpConstants.HttpHeaders.PARTITION_KEY) != null;
+            boolean hasPartitionKey = request.getHeaders().get(HttpConstants.Headers.PARTITION_KEY) != null;
             if(!hasPartitionKey){
                 request.routeTo(new PartitionKeyRangeIdentity(collectionRid, range.getId()));
             }
         }
     }
 
-    private RxDocumentServiceRequest createQueryDocumentServiceRequest(Map<String, String> requestHeaders,
+    private RxDocumentServiceRequest createQueryDocumentServiceRequest(HttpHeaders requestHeaders,
             SqlQuerySpec querySpec) {
         RxDocumentServiceRequest executeQueryRequest;
 
@@ -227,7 +228,7 @@ implements IDocumentQueryExecutionContext<T> {
                     // AuthorizationTokenType.PrimaryMasterKey,
                     requestHeaders);
 
-            executeQueryRequest.getHeaders().put(HttpConstants.HttpHeaders.CONTENT_TYPE, MediaTypes.JSON);
+            executeQueryRequest.getHeaders().put(HttpConstants.Headers.CONTENT_TYPE, MediaTypes.JSON);
             executeQueryRequest.setContentBytes(Utils.getUTF8Bytes(querySpec.getQueryText()));
             break;
 
@@ -239,7 +240,7 @@ implements IDocumentQueryExecutionContext<T> {
                     // AuthorizationTokenType.PrimaryMasterKey,
                     requestHeaders);
 
-            executeQueryRequest.getHeaders().put(HttpConstants.HttpHeaders.CONTENT_TYPE, MediaTypes.QUERY_JSON);
+            executeQueryRequest.getHeaders().put(HttpConstants.Headers.CONTENT_TYPE, MediaTypes.QUERY_JSON);
             executeQueryRequest.setByteBuffer(ModelBridgeInternal.serializeJsonToByteBuffer(querySpec));
             break;
         }
@@ -247,7 +248,7 @@ implements IDocumentQueryExecutionContext<T> {
         return executeQueryRequest;
     }
 
-    private RxDocumentServiceRequest createReadFeedDocumentServiceRequest(Map<String, String> requestHeaders) {
+    private RxDocumentServiceRequest createReadFeedDocumentServiceRequest(HttpHeaders requestHeaders) {
         if (this.resourceTypeEnum == ResourceType.Database || this.resourceTypeEnum == ResourceType.Offer) {
             return RxDocumentServiceRequest.create(OperationType.ReadFeed, null, this.resourceTypeEnum,
                     // TODO: we may want to add a constructor to RxDocumentRequest supporting authorization type similar to .net

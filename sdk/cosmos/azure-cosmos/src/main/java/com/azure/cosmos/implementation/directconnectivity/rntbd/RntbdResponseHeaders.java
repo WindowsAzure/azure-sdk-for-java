@@ -3,12 +3,11 @@
 
 package com.azure.cosmos.implementation.directconnectivity.rntbd;
 
+import com.azure.core.http.HttpHeaders;
 import com.fasterxml.jackson.annotation.JsonFilter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectWriter;
-import com.azure.cosmos.implementation.guava25.collect.ImmutableList;
-import com.azure.cosmos.implementation.guava25.collect.ImmutableMap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.CorruptedFrameException;
@@ -16,13 +15,11 @@ import io.netty.handler.codec.CorruptedFrameException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.AbstractMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static com.azure.cosmos.implementation.HttpConstants.HttpHeaders;
+import static com.azure.cosmos.implementation.HttpConstants.Headers;
 import static com.azure.cosmos.implementation.directconnectivity.WFConstants.BackendHeaders;
 import static com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdConstants.RntbdIndexingDirective;
 import static com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdConstants.RntbdResponseHeader;
@@ -193,34 +190,14 @@ class RntbdResponseHeaders extends RntbdTokenStream<RntbdResponseHeader> {
         return this.payloadPresent.isPresent() && this.payloadPresent.getValue(Byte.class) != 0x00;
     }
 
-    List<Map.Entry<String, String>> asList(final RntbdContext context, final UUID activityId) {
+    public HttpHeaders asCoreHttpHeaders(final RntbdContext context, final UUID activityId) {
 
-        final ImmutableList.Builder<Map.Entry<String, String>> builder = ImmutableList.builderWithExpectedSize(this.computeCount() + 2);
-        builder.add(new Entry(HttpHeaders.SERVER_VERSION, context.serverVersion()));
-        builder.add(new Entry(HttpHeaders.ACTIVITY_ID, activityId.toString()));
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.put(Headers.SERVER_VERSION, context.serverVersion());
+        httpHeaders.put(Headers.ACTIVITY_ID, activityId.toString());
 
-        this.collectEntries((token, toEntry) -> {
-            if (token.isPresent()) {
-                builder.add(toEntry.apply(token));
-            }
-        });
-
-        return builder.build();
-    }
-
-    public Map<String, String> asMap(final RntbdContext context, final UUID activityId) {
-
-        final ImmutableMap.Builder<String, String> builder = ImmutableMap.builderWithExpectedSize(this.computeCount() + 2);
-        builder.put(new Entry(HttpHeaders.SERVER_VERSION, context.serverVersion()));
-        builder.put(new Entry(HttpHeaders.ACTIVITY_ID, activityId.toString()));
-
-        this.collectEntries((token, toEntry) -> {
-            if (token.isPresent()) {
-                builder.put(toEntry.apply(token));
-            }
-        });
-
-        return builder.build();
+        this.collectEntries(httpHeaders);
+        return httpHeaders;
     }
 
     static RntbdResponseHeaders decode(final ByteBuf in) {
@@ -241,48 +218,48 @@ class RntbdResponseHeaders extends RntbdTokenStream<RntbdResponseHeader> {
     public void setValues(final Map<String, String> headers) {
 
         this.mapValue(this.LSN, BackendHeaders.LSN, Long::parseLong, headers);
-        this.mapValue(this.collectionLazyIndexProgress, HttpHeaders.COLLECTION_LAZY_INDEXING_PROGRESS, Integer::parseInt, headers);
+        this.mapValue(this.collectionLazyIndexProgress, Headers.COLLECTION_LAZY_INDEXING_PROGRESS, Integer::parseInt, headers);
         this.mapValue(this.collectionLazyIndexProgress, BackendHeaders.COLLECTION_PARTITION_INDEX, Integer::parseInt, headers);
         this.mapValue(this.collectionSecurityIdentifier, BackendHeaders.COLLECTION_SECURITY_IDENTIFIER, String::toString, headers);
         this.mapValue(this.collectionServiceIndex, BackendHeaders.COLLECTION_SERVICE_INDEX, Integer::parseInt, headers);
-        this.mapValue(this.collectionUpdateProgress, HttpHeaders.COLLECTION_INDEX_TRANSFORMATION_PROGRESS, Integer::parseInt, headers);
-        this.mapValue(this.continuationToken, HttpHeaders.CONTINUATION, String::toString, headers);
+        this.mapValue(this.collectionUpdateProgress, Headers.COLLECTION_INDEX_TRANSFORMATION_PROGRESS, Integer::parseInt, headers);
+        this.mapValue(this.continuationToken, Headers.CONTINUATION, String::toString, headers);
         this.mapValue(this.currentReplicaSetSize, BackendHeaders.CURRENT_REPLICA_SET_SIZE, Integer::parseInt, headers);
         this.mapValue(this.currentWriteQuorum, BackendHeaders.CURRENT_WRITE_QUORUM, Integer::parseInt, headers);
         this.mapValue(this.databaseAccountId, BackendHeaders.DATABASE_ACCOUNT_ID, String::toString, headers);
-        this.mapValue(this.disableRntbdChannel, HttpHeaders.DISABLE_RNTBD_CHANNEL, Boolean::parseBoolean, headers);
-        this.mapValue(this.eTag, HttpHeaders.E_TAG, String::toString, headers);
+        this.mapValue(this.disableRntbdChannel, Headers.DISABLE_RNTBD_CHANNEL, Boolean::parseBoolean, headers);
+        this.mapValue(this.eTag, Headers.E_TAG, String::toString, headers);
         this.mapValue(this.globalCommittedLSN, BackendHeaders.GLOBAL_COMMITTED_LSN, Long::parseLong, headers);
         this.mapValue(this.hasTentativeWrites, BackendHeaders.HAS_TENTATIVE_WRITES, Boolean::parseBoolean, headers);
-        this.mapValue(this.indexingDirective, HttpHeaders.INDEXING_DIRECTIVE, RntbdIndexingDirective::valueOf, headers);
+        this.mapValue(this.indexingDirective, Headers.INDEXING_DIRECTIVE, RntbdIndexingDirective::valueOf, headers);
         this.mapValue(this.isRUPerMinuteUsed, BackendHeaders.IS_RU_PER_MINUTE_USED, Byte::parseByte, headers);
-        this.mapValue(this.itemCount, HttpHeaders.ITEM_COUNT, Integer::parseInt, headers);
+        this.mapValue(this.itemCount, Headers.ITEM_COUNT, Integer::parseInt, headers);
         this.mapValue(this.itemLSN, BackendHeaders.ITEM_LSN, Long::parseLong, headers);
         this.mapValue(this.itemLocalLSN, BackendHeaders.ITEM_LOCAL_LSN, Long::parseLong, headers);
-        this.mapValue(this.lastStateChangeDateTime, HttpHeaders.LAST_STATE_CHANGE_UTC, String::toString, headers);
-        this.mapValue(this.lastStateChangeDateTime, HttpHeaders.LAST_STATE_CHANGE_UTC, String::toString, headers);
+        this.mapValue(this.lastStateChangeDateTime, Headers.LAST_STATE_CHANGE_UTC, String::toString, headers);
+        this.mapValue(this.lastStateChangeDateTime, Headers.LAST_STATE_CHANGE_UTC, String::toString, headers);
         this.mapValue(this.localLSN, BackendHeaders.LOCAL_LSN, Long::parseLong, headers);
-        this.mapValue(this.logResults, HttpHeaders.LOG_RESULTS, String::toString, headers);
+        this.mapValue(this.logResults, Headers.LOG_RESULTS, String::toString, headers);
         this.mapValue(this.numberOfReadRegions, BackendHeaders.NUMBER_OF_READ_REGIONS, Integer::parseInt, headers);
         this.mapValue(this.offerReplacePending, BackendHeaders.OFFER_REPLACE_PENDING, Boolean::parseBoolean, headers);
-        this.mapValue(this.ownerFullName, HttpHeaders.OWNER_FULL_NAME, String::toString, headers);
-        this.mapValue(this.ownerId, HttpHeaders.OWNER_ID, String::toString, headers);
+        this.mapValue(this.ownerFullName, Headers.OWNER_FULL_NAME, String::toString, headers);
+        this.mapValue(this.ownerId, Headers.OWNER_ID, String::toString, headers);
         this.mapValue(this.partitionKeyRangeId, BackendHeaders.PARTITION_KEY_RANGE_ID, String::toString, headers);
         this.mapValue(this.queryMetrics, BackendHeaders.QUERY_METRICS, String::toString, headers);
         this.mapValue(this.quorumAckedLSN, BackendHeaders.QUORUM_ACKED_LSN, Long::parseLong, headers);
         this.mapValue(this.quorumAckedLocalLSN, BackendHeaders.QUORUM_ACKED_LOCAL_LSN, Long::parseLong, headers);
-        this.mapValue(this.requestCharge, HttpHeaders.REQUEST_CHARGE, Double::parseDouble, headers);
+        this.mapValue(this.requestCharge, Headers.REQUEST_CHARGE, Double::parseDouble, headers);
         this.mapValue(this.requestValidationFailure, BackendHeaders.REQUEST_VALIDATION_FAILURE, Byte::parseByte, headers);
         this.mapValue(this.restoreState, BackendHeaders.RESTORE_STATE, String::toString, headers);
-        this.mapValue(this.retryAfterMilliseconds, HttpHeaders.RETRY_AFTER_IN_MILLISECONDS, Integer::parseInt, headers);
-        this.mapValue(this.schemaVersion, HttpHeaders.SCHEMA_VERSION, String::toString, headers);
-        this.mapValue(this.serverDateTimeUtc, HttpHeaders.X_DATE, String::toString, headers);
-        this.mapValue(this.sessionToken, HttpHeaders.SESSION_TOKEN, String::toString, headers);
+        this.mapValue(this.retryAfterMilliseconds, Headers.RETRY_AFTER_IN_MILLISECONDS, Integer::parseInt, headers);
+        this.mapValue(this.schemaVersion, Headers.SCHEMA_VERSION, String::toString, headers);
+        this.mapValue(this.serverDateTimeUtc, Headers.X_DATE, String::toString, headers);
+        this.mapValue(this.sessionToken, Headers.SESSION_TOKEN, String::toString, headers);
         this.mapValue(this.shareThroughput, BackendHeaders.SHARE_THROUGHPUT, Boolean::parseBoolean, headers);
-        this.mapValue(this.storageMaxResoureQuota, HttpHeaders.MAX_RESOURCE_QUOTA, String::toString, headers);
-        this.mapValue(this.storageResourceQuotaUsage, HttpHeaders.CURRENT_RESOURCE_QUOTA_USAGE, String::toString, headers);
+        this.mapValue(this.storageMaxResoureQuota, Headers.MAX_RESOURCE_QUOTA, String::toString, headers);
+        this.mapValue(this.storageResourceQuotaUsage, Headers.CURRENT_RESOURCE_QUOTA_USAGE, String::toString, headers);
         this.mapValue(this.subStatus, BackendHeaders.SUB_STATUS, Integer::parseInt, headers);
-        this.mapValue(this.transportRequestID, HttpHeaders.TRANSPORT_REQUEST_ID, Integer::parseInt, headers);
+        this.mapValue(this.transportRequestID, Headers.TRANSPORT_REQUEST_ID, Integer::parseInt, headers);
         this.mapValue(this.xpRole, BackendHeaders.XP_ROLE, Integer::parseInt, headers);
     }
 
@@ -296,179 +273,118 @@ class RntbdResponseHeaders extends RntbdTokenStream<RntbdResponseHeader> {
         }
     }
 
-    private void collectEntries(final BiConsumer<RntbdToken, Function<RntbdToken, Map.Entry<String, String>>> collector) {
+    private void collectEntries(final HttpHeaders responseHeaders) {
 
-        collector.accept(this.LSN, token ->
-            toLongEntry(BackendHeaders.LSN, token)
-        );
+        addLongHeaderIfPresent(this.LSN, BackendHeaders.LSN, responseHeaders);
+        addLongHeaderIfPresent(this.collectionLazyIndexProgress, Headers.COLLECTION_LAZY_INDEXING_PROGRESS, responseHeaders);
+        addLongHeaderIfPresent(this.collectionPartitionIndex, BackendHeaders.COLLECTION_PARTITION_INDEX, responseHeaders);
 
-        collector.accept(this.collectionLazyIndexProgress, token ->
-            toIntegerEntry(HttpHeaders.COLLECTION_LAZY_INDEXING_PROGRESS, token)
-        );
+        addStringHeaderIfPresent(this.collectionSecurityIdentifier, BackendHeaders.COLLECTION_SECURITY_IDENTIFIER, responseHeaders);
 
-        collector.accept(this.collectionPartitionIndex, token ->
-            toIntegerEntry(BackendHeaders.COLLECTION_PARTITION_INDEX, token)
-        );
+        addLongHeaderIfPresent(this.collectionServiceIndex, BackendHeaders.COLLECTION_SERVICE_INDEX, responseHeaders);
 
-        collector.accept(this.collectionSecurityIdentifier, token ->
-            toStringEntry(BackendHeaders.COLLECTION_SECURITY_IDENTIFIER, token)
-        );
+        addLongHeaderIfPresent(this.collectionUpdateProgress, Headers.COLLECTION_INDEX_TRANSFORMATION_PROGRESS, responseHeaders);
 
-        collector.accept(this.collectionServiceIndex, token ->
-            toIntegerEntry(BackendHeaders.COLLECTION_SERVICE_INDEX, token)
-        );
+        addStringHeaderIfPresent(this.continuationToken, Headers.CONTINUATION, responseHeaders);
 
-        collector.accept(this.collectionUpdateProgress, token ->
-            toIntegerEntry(HttpHeaders.COLLECTION_INDEX_TRANSFORMATION_PROGRESS, token)
-        );
+        addLongHeaderIfPresent(this.currentReplicaSetSize, BackendHeaders.CURRENT_REPLICA_SET_SIZE, responseHeaders);
+        addLongHeaderIfPresent(this.currentWriteQuorum, BackendHeaders.CURRENT_WRITE_QUORUM, responseHeaders);
 
-        collector.accept(this.continuationToken, token ->
-            toStringEntry(HttpHeaders.CONTINUATION, token)
-        );
+        addStringHeaderIfPresent(this.databaseAccountId, BackendHeaders.DATABASE_ACCOUNT_ID, responseHeaders);
+        addBooleanHeaderIfPresent(this.disableRntbdChannel, Headers.DISABLE_RNTBD_CHANNEL, responseHeaders);
 
-        collector.accept(this.currentReplicaSetSize, token ->
-            toIntegerEntry(BackendHeaders.CURRENT_REPLICA_SET_SIZE, token)
-        );
+        addStringHeaderIfPresent(this.eTag, Headers.E_TAG, responseHeaders);
 
-        collector.accept(this.currentWriteQuorum, token ->
-            toIntegerEntry(BackendHeaders.CURRENT_WRITE_QUORUM, token)
-        );
+        addLongHeaderIfPresent(this.globalCommittedLSN, BackendHeaders.GLOBAL_COMMITTED_LSN, responseHeaders);
 
-        collector.accept(this.databaseAccountId, token ->
-            toStringEntry(BackendHeaders.DATABASE_ACCOUNT_ID, token)
-        );
+        addBooleanHeaderIfPresent(this.hasTentativeWrites, BackendHeaders.HAS_TENTATIVE_WRITES, responseHeaders);
 
-        collector.accept(this.disableRntbdChannel, token ->
-            toBooleanEntry(HttpHeaders.DISABLE_RNTBD_CHANNEL, token)
-        );
+        if(this.indexingDirective.isPresent()) {
+            responseHeaders.put(Headers.INDEXING_DIRECTIVE, RntbdIndexingDirective.fromId(this.indexingDirective.getValue(Byte.class)).name());
+        }
 
-        collector.accept(this.eTag, token ->
-            toStringEntry(HttpHeaders.E_TAG, token)
-        );
+        addByteHeaderIfPresent(this.isRUPerMinuteUsed, BackendHeaders.IS_RU_PER_MINUTE_USED, responseHeaders);
 
-        collector.accept(this.globalCommittedLSN, token ->
-            toLongEntry(BackendHeaders.GLOBAL_COMMITTED_LSN, token)
-        );
+        addLongHeaderIfPresent(this.itemCount, Headers.ITEM_COUNT, responseHeaders);
+        addLongHeaderIfPresent(this.itemLSN, BackendHeaders.ITEM_LSN, responseHeaders);
+        addLongHeaderIfPresent(this.itemLocalLSN, BackendHeaders.ITEM_LOCAL_LSN, responseHeaders);
 
-        collector.accept(this.hasTentativeWrites, token ->
-            toBooleanEntry(BackendHeaders.HAS_TENTATIVE_WRITES, token)
-        );
+        addStringHeaderIfPresent(this.lastStateChangeDateTime, Headers.LAST_STATE_CHANGE_UTC, responseHeaders);
 
-        collector.accept(this.indexingDirective, token ->
-            new Entry(HttpHeaders.INDEXING_DIRECTIVE, RntbdIndexingDirective.fromId(token.getValue(Byte.class)).name())
-        );
+        addLongHeaderIfPresent(this.localLSN, BackendHeaders.LOCAL_LSN, responseHeaders);
 
-        collector.accept(this.isRUPerMinuteUsed, token ->
-            toByteEntry(BackendHeaders.IS_RU_PER_MINUTE_USED, token)
-        );
+        addStringHeaderIfPresent(this.logResults, Headers.LOG_RESULTS, responseHeaders);
 
-        collector.accept(this.itemCount, token ->
-            toIntegerEntry(HttpHeaders.ITEM_COUNT, token)
-        );
+        addLongHeaderIfPresent(this.numberOfReadRegions, BackendHeaders.NUMBER_OF_READ_REGIONS, responseHeaders);
 
-        collector.accept(this.itemLSN, token ->
-            toLongEntry(BackendHeaders.ITEM_LSN, token)
-        );
+        addBooleanHeaderIfPresent(this.offerReplacePending, BackendHeaders.OFFER_REPLACE_PENDING, responseHeaders);
 
-        collector.accept(this.itemLocalLSN, token ->
-            toLongEntry(BackendHeaders.ITEM_LOCAL_LSN, token)
-        );
+        addStringHeaderIfPresent(this.ownerFullName, Headers.OWNER_FULL_NAME, responseHeaders);
+        addStringHeaderIfPresent(this.ownerId, Headers.OWNER_ID, responseHeaders);
+        addStringHeaderIfPresent(this.partitionKeyRangeId, BackendHeaders.PARTITION_KEY_RANGE_ID, responseHeaders);
+        addStringHeaderIfPresent(this.queryMetrics, BackendHeaders.QUERY_METRICS, responseHeaders);
 
-        collector.accept(this.lastStateChangeDateTime, token ->
-            toStringEntry(HttpHeaders.LAST_STATE_CHANGE_UTC, token)
-        );
+        addLongHeaderIfPresent(this.quorumAckedLSN, BackendHeaders.QUORUM_ACKED_LSN, responseHeaders);
+        addLongHeaderIfPresent(this.quorumAckedLocalLSN, BackendHeaders.QUORUM_ACKED_LOCAL_LSN, responseHeaders);
 
-        collector.accept(this.localLSN, token ->
-            toLongEntry(BackendHeaders.LOCAL_LSN, token)
-        );
+        addCurrencyEntryTokenHeaderIfPresent(this.requestCharge, Headers.REQUEST_CHARGE, responseHeaders);
 
-        collector.accept(this.logResults, token ->
-            toStringEntry(HttpHeaders.LOG_RESULTS, token)
-        );
+        addByteHeaderIfPresent(this.requestValidationFailure, BackendHeaders.REQUEST_VALIDATION_FAILURE, responseHeaders);
 
-        collector.accept(this.numberOfReadRegions, token ->
-            toIntegerEntry(BackendHeaders.NUMBER_OF_READ_REGIONS, token)
-        );
+        addStringHeaderIfPresent(this.restoreState, BackendHeaders.RESTORE_STATE, responseHeaders);
 
-        collector.accept(this.offerReplacePending, token ->
-            toBooleanEntry(BackendHeaders.OFFER_REPLACE_PENDING, token)
-        );
+        addLongHeaderIfPresent(this.retryAfterMilliseconds, Headers.RETRY_AFTER_IN_MILLISECONDS, responseHeaders);
 
-        collector.accept(this.ownerFullName, token ->
-            toStringEntry(HttpHeaders.OWNER_FULL_NAME, token)
-        );
+        addStringHeaderIfPresent(this.schemaVersion, Headers.SCHEMA_VERSION, responseHeaders);
+        addStringHeaderIfPresent(this.serverDateTimeUtc, Headers.X_DATE, responseHeaders);
 
-        collector.accept(this.ownerId, token ->
-            toStringEntry(HttpHeaders.OWNER_ID, token)
-        );
+        addSessionTokenHeaderIfPresent(this.sessionToken, Headers.SESSION_TOKEN, responseHeaders);
 
-        collector.accept(this.partitionKeyRangeId, token ->
-            toStringEntry(BackendHeaders.PARTITION_KEY_RANGE_ID, token)
-        );
+        addBooleanHeaderIfPresent(this.shareThroughput, BackendHeaders.SHARE_THROUGHPUT, responseHeaders);
 
-        collector.accept(this.queryMetrics, token ->
-            toStringEntry(BackendHeaders.QUERY_METRICS, token)
-        );
+        addStringHeaderIfPresent(this.storageMaxResoureQuota, Headers.MAX_RESOURCE_QUOTA, responseHeaders);
+        addStringHeaderIfPresent(this.storageResourceQuotaUsage, Headers.CURRENT_RESOURCE_QUOTA_USAGE, responseHeaders);
 
-        collector.accept(this.quorumAckedLSN, token ->
-            toLongEntry(BackendHeaders.QUORUM_ACKED_LSN, token)
-        );
+        addLongHeaderIfPresent(this.subStatus, Headers.SUB_STATUS, responseHeaders);
+        addLongHeaderIfPresent(this.transportRequestID, Headers.TRANSPORT_REQUEST_ID, responseHeaders);
+        addLongHeaderIfPresent(this.xpRole, BackendHeaders.XP_ROLE, responseHeaders);
+    }
 
-        collector.accept(this.quorumAckedLocalLSN, token ->
-            toLongEntry(BackendHeaders.QUORUM_ACKED_LOCAL_LSN, token)
-        );
+    private void addLongHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            responseHeaders.put(headerName, Long.toString(this.LSN.getValue(Long.class)));
+        }
+    }
 
-        collector.accept(this.requestCharge, token ->
-            toCurrencyEntry(HttpHeaders.REQUEST_CHARGE, token)
-        );
+    private void addStringHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            responseHeaders.put(headerName, token.getValue(String.class));
+        }
+    }
 
-        collector.accept(this.requestValidationFailure, token ->
-            toByteEntry(BackendHeaders.REQUEST_VALIDATION_FAILURE, token)
-        );
+    private void addBooleanHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            responseHeaders.put(headerName, String.valueOf(token.getValue(Byte.class) != 0));
+        }
+    }
 
-        collector.accept(this.restoreState, token ->
-            toStringEntry(BackendHeaders.RESTORE_STATE, token)
-        );
+    private void addByteHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            responseHeaders.put(headerName, Byte.toString(token.getValue(Byte.class)));
+        }
+    }
 
-        collector.accept(this.retryAfterMilliseconds, token ->
-            toIntegerEntry(HttpHeaders.RETRY_AFTER_IN_MILLISECONDS, token)
-        );
+    private void addSessionTokenHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            responseHeaders.put(headerName, this.partitionKeyRangeId.getValue(String.class) + ":" + this.sessionToken.getValue(String.class));
+        }
+    }
 
-        collector.accept(this.schemaVersion, token ->
-            toStringEntry(HttpHeaders.SCHEMA_VERSION, token)
-        );
-
-        collector.accept(this.serverDateTimeUtc, token ->
-            toStringEntry(HttpHeaders.X_DATE, token)
-        );
-
-        collector.accept(this.sessionToken, token ->
-            this.toSessionTokenEntry(HttpHeaders.SESSION_TOKEN, token)
-        );
-
-        collector.accept(this.shareThroughput, token ->
-            toBooleanEntry(BackendHeaders.SHARE_THROUGHPUT, token)
-        );
-
-        collector.accept(this.storageMaxResoureQuota, token ->
-            toStringEntry(HttpHeaders.MAX_RESOURCE_QUOTA, token)
-        );
-
-        collector.accept(this.storageResourceQuotaUsage, token ->
-            toStringEntry(HttpHeaders.CURRENT_RESOURCE_QUOTA_USAGE, token)
-        );
-
-        collector.accept(this.subStatus, token ->
-            toIntegerEntry(BackendHeaders.SUB_STATUS, token)
-        );
-
-        collector.accept(this.transportRequestID, token ->
-            toIntegerEntry(HttpHeaders.TRANSPORT_REQUEST_ID, token)
-        );
-
-        collector.accept(this.xpRole, token ->
-            toIntegerEntry(BackendHeaders.XP_ROLE, token)
-        );
+    private void addCurrencyEntryTokenHeaderIfPresent(final RntbdToken token, final String headerName, final HttpHeaders responseHeaders) {
+        if (token.isPresent()) {
+            final BigDecimal value = new BigDecimal(Math.round(token.getValue(Double.class) * 100D)).scaleByPowerOfTen(-2);
+            responseHeaders.put(headerName, value.toString());
+        }
     }
 
     private void mapValue(final RntbdToken token, final String name, final Function<String, Object> parse, final Map<String, String> headers) {
@@ -477,43 +393,6 @@ class RntbdResponseHeaders extends RntbdTokenStream<RntbdResponseHeader> {
 
         if (value != null) {
             token.setValue(parse.apply(value));
-        }
-    }
-
-    private static Map.Entry<String, String> toBooleanEntry(final String name, final RntbdToken token) {
-        return new Entry(name, String.valueOf(token.getValue(Byte.class) != 0));
-    }
-
-    private static Map.Entry<String, String> toByteEntry(final String name, final RntbdToken token) {
-        return new Entry(name, Byte.toString(token.getValue(Byte.class)));
-    }
-
-    private static Map.Entry<String, String> toCurrencyEntry(final String name, final RntbdToken token) {
-        final BigDecimal value = new BigDecimal(Math.round(token.getValue(Double.class) * 100D)).scaleByPowerOfTen(-2);
-        return new Entry(name, value.toString());
-    }
-
-    private static Map.Entry<String, String> toIntegerEntry(final String name, final RntbdToken token) {
-        return new Entry(name, Long.toString(token.getValue(Long.class)));
-    }
-
-    private static Map.Entry<String, String> toLongEntry(final String name, final RntbdToken token) {
-        return new Entry(name, Long.toString(token.getValue(Long.class)));
-    }
-
-    private Map.Entry<String, String> toSessionTokenEntry(final String name, final RntbdToken token) {
-        return new Entry(name, this.partitionKeyRangeId.getValue(String.class) + ":" + this.sessionToken.getValue(String.class));
-    }
-
-    private static Map.Entry<String, String> toStringEntry(final String name, final RntbdToken token) {
-        return new Entry(name, token.getValue(String.class));
-    }
-
-    private static final class Entry extends AbstractMap.SimpleImmutableEntry<String, String> implements Serializable {
-        private static final long serialVersionUID = -5926883743469858929L;
-
-        Entry(final String name, final String value) {
-            super(name, value);
         }
     }
 }

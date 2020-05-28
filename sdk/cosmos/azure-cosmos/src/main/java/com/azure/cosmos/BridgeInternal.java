@@ -3,6 +3,7 @@
 
 package com.azure.cosmos;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.implementation.Configs;
 import com.azure.cosmos.implementation.Constants;
 import com.azure.cosmos.implementation.CosmosError;
@@ -87,7 +88,7 @@ public final class BridgeInternal {
     }
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
-    public static <T> FeedResponse<T> toFeedResponsePage(List<T> results, Map<String, String> headers, boolean noChanges) {
+    public static <T> FeedResponse<T> toFeedResponsePage(List<T> results, HttpHeaders headers, boolean noChanges) {
         return ModelBridgeInternal.toFeedResponsePage(results, headers, noChanges);
     }
 
@@ -109,13 +110,14 @@ public final class BridgeInternal {
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static <T> FeedResponse<T> createFeedResponse(List<T> results,
-            Map<String, String> headers) {
+                                                         HttpHeaders headers) {
         return ModelBridgeInternal.createFeedResponse(results, headers);
     }
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static <T> FeedResponse<T> createFeedResponseWithQueryMetrics(List<T> results,
-            Map<String, String> headers, ConcurrentMap<String, QueryMetrics> queryMetricsMap) {
+                                                         HttpHeaders headers,
+                                                         ConcurrentMap<String, QueryMetrics> queryMetricsMap) {
         return ModelBridgeInternal.createFeedResponseWithQueryMetrics(results, headers, queryMetricsMap);
     }
 
@@ -169,12 +171,12 @@ public final class BridgeInternal {
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static <E extends CosmosException> void setRequestHeaders(CosmosException cosmosException,
-                                                                     Map<String, String> requestHeaders) {
+                                                                     HttpHeaders requestHeaders) {
         cosmosException.requestHeaders = requestHeaders;
     }
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
-    public static <E extends CosmosException> Map<String, String> getRequestHeaders(
+    public static <E extends CosmosException> HttpHeaders getRequestHeaders(
         CosmosException cosmosException) {
         return cosmosException.requestHeaders;
     }
@@ -282,7 +284,7 @@ public final class BridgeInternal {
 
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static CosmosException createCosmosException(int statusCode, CosmosError cosmosErrorResource,
-                                                        Map<String, String> responseHeaders) {
+                                                        HttpHeaders responseHeaders) {
         return new CosmosException(/* resourceAddress */ null, statusCode, cosmosErrorResource, responseHeaders);
     }
 
@@ -290,7 +292,7 @@ public final class BridgeInternal {
     public static CosmosException createCosmosException(String resourceAddress,
                                                         int statusCode,
                                                         CosmosError cosmosErrorResource,
-                                                        Map<String, String> responseHeaders) {
+                                                        HttpHeaders responseHeaders) {
         CosmosException cosmosException = new CosmosException(statusCode,
             cosmosErrorResource == null ? null : cosmosErrorResource.getMessage(), responseHeaders, null);
         cosmosException.setResourceAddress(resourceAddress);
@@ -306,7 +308,7 @@ public final class BridgeInternal {
     @Warning(value = INTERNAL_USE_ONLY_WARNING)
     public static CosmosException createCosmosException(String message,
                                                         Exception exception,
-                                                        Map<String, String> responseHeaders,
+                                                        HttpHeaders responseHeaders,
                                                         int statusCode,
                                                         String resourceAddress) {
         CosmosException cosmosException = new CosmosException(statusCode, message, responseHeaders,

@@ -2,12 +2,9 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
-import com.azure.cosmos.implementation.http.HttpHeaders;
-
-import java.util.Map;
 
 /**
  * While this class is public, but it is not part of our published public APIs.
@@ -30,7 +27,7 @@ public class ConflictException extends CosmosException {
      * @param responseHeaders the response headers
      */
     public ConflictException(CosmosError cosmosError, long lsn, String partitionKeyRangeId,
-                             Map<String, String> responseHeaders) {
+                             HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.CONFLICT, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -59,17 +56,13 @@ public class ConflictException extends CosmosException {
         this(RMResources.EntityAlreadyExists, innerException, null, null);
     }
 
-    ConflictException(CosmosError cosmosError, Map<String, String> headers) {
-        super(HttpConstants.StatusCodes.CONFLICT, cosmosError, headers);
-    }
-
     ConflictException(String message,
                       Exception innerException,
                       HttpHeaders headers,
                       String requestUriString) {
         super(String.format("%s: %s", RMResources.EntityAlreadyExists, message),
             innerException,
-            HttpUtils.asMap(headers),
+            headers,
             HttpConstants.StatusCodes.CONFLICT,
             requestUriString);
     }

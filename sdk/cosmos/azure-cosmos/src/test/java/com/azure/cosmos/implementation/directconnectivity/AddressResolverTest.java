@@ -4,6 +4,7 @@
 package com.azure.cosmos.implementation.directconnectivity;
 
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.implementation.InvalidPartitionException;
 import com.azure.cosmos.implementation.NotFoundException;
@@ -203,20 +204,20 @@ public class AddressResolverTest {
                 OperationType.Read,
                 ResourceType.Document,
                 "dbs/db/colls/coll/docs/doc1",
-                new HashMap<>());
+                new HttpHeaders());
         } else {
             request = RxDocumentServiceRequest.create(
                 OperationType.Read,
                 ResourceType.Document,
                 DOCUMENT_TEST_URL,
-                new HashMap<>());
+                new HttpHeaders());
         }
 
         request.forceNameCacheRefresh = forceNameCacheRefresh;
         request.forcePartitionKeyRangeRefresh = forceRoutingMapRefresh;
         PartitionKey pk = new PartitionKey("foo");
         request.setPartitionKeyInternal(BridgeInternal.getPartitionKeyInternal(pk));
-        request.getHeaders().put(HttpConstants.HttpHeaders.PARTITION_KEY, pk.toString());
+        request.getHeaders().put(HttpConstants.Headers.PARTITION_KEY, pk.toString());
         AddressInformation[] resolvedAddresses;
         try {
             resolvedAddresses = this.addressResolver.resolveAsync(request, forceAddressRefresh).block();
@@ -276,7 +277,7 @@ public class AddressResolverTest {
                 OperationType.Read,
                 ResourceType.Document,
                 DOCUMENT_TEST_URL,
-                new HashMap<>());
+                new HttpHeaders());
         }
 
         request.forceNameCacheRefresh = forceNameCacheRefresh;

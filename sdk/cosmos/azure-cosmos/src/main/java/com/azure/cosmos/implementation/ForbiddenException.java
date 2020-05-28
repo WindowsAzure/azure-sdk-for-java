@@ -3,13 +3,11 @@
 
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 
 import java.net.URI;
-import java.util.Map;
 
 /**
  * Forbidden exception
@@ -27,7 +25,7 @@ public class ForbiddenException extends CosmosException {
      * @param responseHeaders the response headers
      */
     public ForbiddenException(CosmosError cosmosError, long lsn, String partitionKeyRangeId,
-                              Map<String, String> responseHeaders) {
+                              HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.FORBIDDEN, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -61,7 +59,7 @@ public class ForbiddenException extends CosmosException {
                        String requestUrlString) {
         super(String.format("%s: %s", RMResources.Forbidden, message),
             innerException,
-            HttpUtils.asMap(headers),
+            headers,
             HttpConstants.StatusCodes.FORBIDDEN,
             requestUrlString);
     }

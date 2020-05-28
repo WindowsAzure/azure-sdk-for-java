@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation.query;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.models.FeedOptions;
 import com.azure.cosmos.models.FeedResponse;
@@ -161,10 +162,10 @@ public class DefaultDocumentQueryExecutionContext<T extends Resource> extends Do
                                 this.retries);
                         ImmutablePair<String, SchedulingTimeSpan> schedulingTimeSpanMap =
                                 new ImmutablePair<>(DEFAULT_PARTITION_KEY_RANGE_ID, this.fetchSchedulingMetrics.getElapsedTime());
-                        if (!StringUtils.isEmpty(tFeedResponse.getResponseHeaders().get(HttpConstants.HttpHeaders.QUERY_METRICS))) {
+                        if (!StringUtils.isEmpty(tFeedResponse.getResponseHeaders().getValue(HttpConstants.Headers.QUERY_METRICS))) {
                             QueryMetrics qm =
                                     BridgeInternal.createQueryMetricsFromDelimitedStringAndClientSideMetrics(tFeedResponse.getResponseHeaders()
-                                                    .get(HttpConstants.HttpHeaders.QUERY_METRICS),
+                                                    .getValue(HttpConstants.Headers.QUERY_METRICS),
                                             new ClientSideMetrics(this.retries,
                                                     tFeedResponse.getRequestCharge(),
                                                     this.fetchExecutionRangeAccumulator.getExecutionRanges(),
@@ -180,7 +181,7 @@ public class DefaultDocumentQueryExecutionContext<T extends Resource> extends Do
     public RxDocumentServiceRequest createRequestAsync(String continuationToken, Integer maxPageSize) {
 
         // TODO this should be async
-        Map<String, String> requestHeaders = this.createCommonHeadersAsync(
+        HttpHeaders requestHeaders = this.createCommonHeadersAsync(
                 this.getFeedOptions(continuationToken, maxPageSize));
 
         // TODO: add support for simple continuation for single partition query

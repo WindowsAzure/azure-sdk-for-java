@@ -59,7 +59,7 @@ public class DatabaseCrudTest extends TestSuiteBase {
         // validate
         FailureValidator validator = new FailureValidator.Builder()
             .resourceAlreadyExists()
-            .documentClientExceptionToStringExcludesHeader(HttpConstants.HttpHeaders.AUTHORIZATION)
+            .documentClientExceptionToStringExcludesHeader(HttpConstants.Headers.AUTHORIZATION)
             .build();
         validateFailure(createObservable, validator);
     }
@@ -83,7 +83,7 @@ public class DatabaseCrudTest extends TestSuiteBase {
         // validate
         FailureValidator validator = new FailureValidator.Builder()
             .resourceNotFound()
-            .documentClientExceptionToStringExcludesHeader(HttpConstants.HttpHeaders.AUTHORIZATION)
+            .documentClientExceptionToStringExcludesHeader(HttpConstants.Headers.AUTHORIZATION)
             .build();
         validateFailure(readObservable, validator);
     }
@@ -115,7 +115,7 @@ public class DatabaseCrudTest extends TestSuiteBase {
         // validate
         FailureValidator validator = new FailureValidator.Builder()
             .resourceNotFound()
-            .documentClientExceptionToStringExcludesHeader(HttpConstants.HttpHeaders.AUTHORIZATION)
+            .documentClientExceptionToStringExcludesHeader(HttpConstants.Headers.AUTHORIZATION)
             .build();
         validateFailure(deleteObservable, validator);
     }

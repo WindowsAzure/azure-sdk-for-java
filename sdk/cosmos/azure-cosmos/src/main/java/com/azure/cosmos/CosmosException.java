@@ -4,6 +4,8 @@
 package com.azure.cosmos;
 
 import com.azure.core.exception.AzureException;
+import com.azure.core.http.HttpHeader;
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.implementation.Constants;
 import com.azure.cosmos.implementation.HttpConstants;
 import com.azure.cosmos.implementation.RequestTimeline;
@@ -13,7 +15,8 @@ import com.azure.cosmos.models.ModelBridgeInternal;
 import com.azure.cosmos.implementation.apachecommons.lang.StringUtils;
 
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,7 +41,7 @@ public class CosmosException extends AzureException {
     private static final long serialVersionUID = 1L;
 
     private final int statusCode;
-    private final Map<String, String> responseHeaders;
+    private final HttpHeaders responseHeaders;
 
     private CosmosDiagnostics cosmosDiagnostics;
     private final RequestTimeline requestTimeline;
@@ -46,15 +49,15 @@ public class CosmosException extends AzureException {
 
     long lsn;
     String partitionKeyRangeId;
-    Map<String, String> requestHeaders;
+    HttpHeaders requestHeaders;
     Uri requestUri;
     String resourceAddress;
 
-    protected CosmosException(int statusCode, String message, Map<String, String> responseHeaders, Throwable cause) {
+    protected CosmosException(int statusCode, String message, HttpHeaders responseHeaders, Throwable cause) {
         super(message, cause);
         this.statusCode = statusCode;
         this.requestTimeline = RequestTimeline.empty();
-        this.responseHeaders = responseHeaders == null ? new HashMap<>() : new HashMap<>(responseHeaders);
+        this.responseHeaders = responseHeaders == null ? new HttpHeaders() : responseHeaders;
     }
 
     /**
@@ -95,7 +98,7 @@ public class CosmosException extends AzureException {
      * @param cosmosErrorResource the error resource object.
      * @param responseHeaders the response headers.
      */
-    protected CosmosException(int statusCode, CosmosError cosmosErrorResource, Map<String, String> responseHeaders) {
+    protected CosmosException(int statusCode, CosmosError cosmosErrorResource, HttpHeaders responseHeaders) {
         this(/* resourceAddress */ null, statusCode, cosmosErrorResource, responseHeaders);
     }
 
@@ -111,7 +114,7 @@ public class CosmosException extends AzureException {
     protected CosmosException(String resourceAddress,
                               int statusCode,
                               CosmosError cosmosErrorResource,
-                              Map<String, String> responseHeaders) {
+                              HttpHeaders responseHeaders) {
         this(statusCode, cosmosErrorResource == null ? null : cosmosErrorResource.getMessage(), responseHeaders, null);
         this.resourceAddress = resourceAddress;
         this.cosmosError = cosmosErrorResource;
@@ -126,7 +129,7 @@ public class CosmosException extends AzureException {
      * @param responseHeaders the response headers.
      * @param resourceAddress the address of the resource the request is associated with.
      */
-    protected CosmosException(String message, Exception exception, Map<String, String> responseHeaders, int statusCode,
+    protected CosmosException(String message, Exception exception, HttpHeaders responseHeaders, int statusCode,
                               String resourceAddress) {
         this(statusCode, message, responseHeaders, exception);
         this.resourceAddress = resourceAddress;
@@ -147,7 +150,7 @@ public class CosmosException extends AzureException {
      */
     public String getActivityId() {
         if (this.responseHeaders != null) {
-            return this.responseHeaders.get(HttpConstants.HttpHeaders.ACTIVITY_ID);
+            return this.responseHeaders.getValue(HttpConstants.Headers.ACTIVITY_ID);
         }
 
         return null;
@@ -170,7 +173,7 @@ public class CosmosException extends AzureException {
     public int getSubStatusCode() {
         int code = HttpConstants.SubStatusCodes.UNKNOWN;
         if (this.responseHeaders != null) {
-            String subStatusString = this.responseHeaders.get(HttpConstants.HttpHeaders.SUB_STATUS);
+            String subStatusString = this.responseHeaders.getValue(HttpConstants.Headers.SUB_STATUS);
             if (StringUtils.isNotEmpty(subStatusString)) {
                 try {
                     code = Integer.parseInt(subStatusString);
@@ -207,7 +210,7 @@ public class CosmosException extends AzureException {
         long retryIntervalInMilliseconds = 0;
 
         if (this.responseHeaders != null) {
-            String header = this.responseHeaders.get(HttpConstants.HttpHeaders.RETRY_AFTER_IN_MILLISECONDS);
+            String header = this.responseHeaders.getValue(HttpConstants.Headers.RETRY_AFTER_IN_MILLISECONDS);
 
             if (StringUtils.isNotEmpty(header)) {
                 try {
@@ -229,7 +232,7 @@ public class CosmosException extends AzureException {
      *
      * @return the response headers
      */
-    public Map<String, String> getResponseHeaders() {
+    public HttpHeaders getResponseHeaders() {
         return this.responseHeaders;
     }
 
@@ -284,12 +287,19 @@ public class CosmosException extends AzureException {
         return null;
     }
 
-    private List<Map.Entry<String, String>> filterSensitiveData(Map<String, String> requestHeaders) {
+    private HttpHeaders filterSensitiveData(HttpHeaders requestHeaders) {
         if (requestHeaders == null) {
             return null;
         }
-        return requestHeaders.entrySet().stream().filter(entry -> !HttpConstants.HttpHeaders.AUTHORIZATION.equalsIgnoreCase(entry.getKey()))
-                             .collect(Collectors.toList());
+
+        HttpHeaders filteredHeaders = new HttpHeaders();
+        for(HttpHeader entry : requestHeaders) {
+            if(! entry.getName().equalsIgnoreCase(HttpConstants.Headers.AUTHORIZATION)) {
+                filteredHeaders.put(entry.getName(), entry.getValue());
+            }
+        }
+
+        return filteredHeaders;
     }
 
     void setResourceAddress(String resourceAddress) {

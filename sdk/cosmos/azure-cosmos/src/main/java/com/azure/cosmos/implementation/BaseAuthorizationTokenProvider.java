@@ -4,6 +4,7 @@
 package com.azure.cosmos.implementation;
 
 import com.azure.core.credential.AzureKeyCredential;
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.implementation.apachecommons.lang.StringUtils;
 import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
 import com.azure.cosmos.models.ModelBridgeInternal;
@@ -85,7 +86,7 @@ public class BaseAuthorizationTokenProvider implements AuthorizationTokenProvide
     public String generateKeyAuthorizationSignature(RequestVerb verb,
                                                     String resourceIdOrFullName,
                                                     ResourceType resourceType,
-                                                    Map<String, String> headers) {
+                                                    HttpHeaders headers) {
         return this.generateKeyAuthorizationSignature(verb, resourceIdOrFullName,
                 BaseAuthorizationTokenProvider.getResourceSegment(resourceType), headers);
     }
@@ -102,7 +103,7 @@ public class BaseAuthorizationTokenProvider implements AuthorizationTokenProvide
     public String generateKeyAuthorizationSignature(RequestVerb verb,
             String resourceIdOrFullName,
             String resourceSegment,
-            Map<String, String> headers) {
+            HttpHeaders headers) {
         if (verb == null) {
             throw new IllegalArgumentException("verb");
         }
@@ -136,14 +137,16 @@ public class BaseAuthorizationTokenProvider implements AuthorizationTokenProvide
                 .append(resourceIdOrFullName)
                 .append('\n');
 
-        if (headers.containsKey(HttpConstants.HttpHeaders.X_DATE)) {
-            body.append(headers.get(HttpConstants.HttpHeaders.X_DATE).toLowerCase(Locale.ROOT));
+        String xDateHeaderValue = headers.getValue(HttpConstants.Headers.X_DATE);
+        if (xDateHeaderValue != null) {
+            body.append(xDateHeaderValue.toLowerCase(Locale.ROOT));
         }
 
         body.append('\n');
 
-        if (headers.containsKey(HttpConstants.HttpHeaders.HTTP_DATE)) {
-            body.append(headers.get(HttpConstants.HttpHeaders.HTTP_DATE).toLowerCase(Locale.ROOT));
+        String httpDateHeaderValue = headers.getValue(HttpConstants.Headers.HTTP_DATE);
+        if (httpDateHeaderValue != null) {
+            body.append(httpDateHeaderValue.toLowerCase(Locale.ROOT));
         }
 
         body.append('\n');
@@ -273,12 +276,12 @@ public class BaseAuthorizationTokenProvider implements AuthorizationTokenProvide
 
     private String generateMessagePayload(RequestVerb verb, String resourceId, String resourceType,
             Map<String, String> headers) {
-        String xDate = headers.get(HttpConstants.HttpHeaders.X_DATE);
-        String date = headers.get(HttpConstants.HttpHeaders.HTTP_DATE);
+        String xDate = headers.get(HttpConstants.Headers.X_DATE);
+        String date = headers.get(HttpConstants.Headers.HTTP_DATE);
         // At-least one of date header should present
         // https://docs.microsoft.com/en-us/rest/api/documentdb/access-control-on-documentdb-resources
         if (StringUtils.isEmpty(xDate) && (StringUtils.isEmpty(date) || StringUtils.isWhitespace(date))) {
-            headers.put(HttpConstants.HttpHeaders.X_DATE, Utils.nowAsRFC1123());
+            headers.put(HttpConstants.Headers.X_DATE, Utils.nowAsRFC1123());
             xDate = Utils.nowAsRFC1123();
         }
 

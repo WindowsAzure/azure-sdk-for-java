@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.implementation.directconnectivity;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.CosmosDiagnostics;
 import com.azure.cosmos.implementation.HttpConstants;
 import com.azure.cosmos.implementation.RequestTimeline;
@@ -19,29 +20,18 @@ import java.util.Map.Entry;
 public class StoreResponse {
     final static Logger LOGGER = LoggerFactory.getLogger(StoreResponse.class);
     final private int status;
-    final private String[] responseHeaderNames;
-    final private String[] responseHeaderValues;
     final private byte[] content;
+    final HttpHeaders httpHeaders;
 
     private CosmosDiagnostics cosmosDiagnostics;
     private RequestTimeline requestTimeline;
 
     public StoreResponse(
             int status,
-            List<Entry<String, String>> headerEntries,
+            HttpHeaders headerEntries,
             byte[] content) {
-
+        httpHeaders = headerEntries;
         requestTimeline = RequestTimeline.empty();
-        responseHeaderNames = new String[headerEntries.size()];
-        responseHeaderValues = new String[headerEntries.size()];
-
-        int i = 0;
-
-        for(Entry<String, String> headerEntry: headerEntries) {
-            responseHeaderNames[i] = headerEntry.getKey();
-            responseHeaderValues[i] = headerEntry.getValue();
-            i++;
-        }
 
         this.status = status;
         this.content = content;
@@ -51,12 +41,8 @@ public class StoreResponse {
         return status;
     }
 
-    public String[] getResponseHeaderNames() {
-        return responseHeaderNames;
-    }
-
-    public String[] getResponseHeaderValues() {
-        return responseHeaderValues;
+    public HttpHeaders getHeaders() {
+        return  this.httpHeaders;
     }
 
     public byte[] getResponseBody() {
@@ -64,7 +50,7 @@ public class StoreResponse {
     }
 
     public long getLSN() {
-        String lsnString = this.getHeaderValue(WFConstants.BackendHeaders.LSN);
+        String lsnString = this.httpHeaders.getValue(WFConstants.BackendHeaders.LSN);
         if (StringUtils.isNotEmpty(lsnString)) {
             return Long.parseLong(lsnString);
         }
@@ -73,25 +59,7 @@ public class StoreResponse {
     }
 
     public String getPartitionKeyRangeId() {
-        return this.getHeaderValue(WFConstants.BackendHeaders.PARTITION_KEY_RANGE_ID);
-    }
-
-    public String getContinuation() {
-        return this.getHeaderValue(HttpConstants.HttpHeaders.CONTINUATION);
-    }
-
-    public String getHeaderValue(String attribute) {
-        if (this.responseHeaderValues == null || this.responseHeaderNames.length != this.responseHeaderValues.length) {
-            return null;
-        }
-
-        for (int i = 0; i < responseHeaderNames.length; i++) {
-            if (responseHeaderNames[i].equalsIgnoreCase(attribute)) {
-                return responseHeaderValues[i];
-            }
-        }
-
-        return null;
+        return this.httpHeaders.getValue(WFConstants.BackendHeaders.PARTITION_KEY_RANGE_ID);
     }
 
     public CosmosDiagnostics getCosmosDiagnostics() {
@@ -113,7 +81,7 @@ public class StoreResponse {
 
     int getSubStatusCode() {
         int subStatusCode = HttpConstants.SubStatusCodes.UNKNOWN;
-        String subStatusCodeString = this.getHeaderValue(WFConstants.BackendHeaders.SUB_STATUS);
+        String subStatusCodeString = this.httpHeaders.getValue(WFConstants.BackendHeaders.SUB_STATUS);
         if (StringUtils.isNotEmpty(subStatusCodeString)) {
             try {
                 subStatusCode = Integer.parseInt(subStatusCodeString);

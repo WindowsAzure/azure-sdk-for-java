@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.implementation.directconnectivity.rntbd;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.implementation.GoneException;
 import com.azure.cosmos.implementation.directconnectivity.RntbdTransportClient;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
-import static com.azure.cosmos.implementation.HttpConstants.HttpHeaders;
+import static com.azure.cosmos.implementation.HttpConstants.Headers;
 import static com.azure.cosmos.implementation.directconnectivity.RntbdTransportClient.Options;
 import static com.azure.cosmos.implementation.guava25.base.Preconditions.checkNotNull;
 import static com.azure.cosmos.implementation.guava25.base.Preconditions.checkState;
@@ -263,10 +264,13 @@ public final class RntbdServiceEndpoint implements RntbdEndpoint {
             logger.debug("\n  [{}]\n  {}\n  write failed due to {} ", this, requestArgs, cause);
             final String reason = cause.getMessage();
 
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.put(Headers.ACTIVITY_ID, activityId.toString());
+
             final GoneException goneException = new GoneException(
                 Strings.lenientFormat("failed to establish connection to %s: %s", this.remoteAddress, reason),
                 cause instanceof Exception ? (Exception)cause : new IOException(reason, cause),
-                ImmutableMap.of(HttpHeaders.ACTIVITY_ID, activityId.toString()),
+                httpHeaders,
                 requestArgs.replicaPath()
             );
 

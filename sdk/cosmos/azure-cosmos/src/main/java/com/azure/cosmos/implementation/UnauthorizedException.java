@@ -3,13 +3,11 @@
 
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 
 import java.net.URI;
-import java.util.Map;
 
 /**
  * The type Unauthorized exception.
@@ -29,7 +27,7 @@ public class UnauthorizedException extends CosmosException {
      * @param responseHeaders the response headers
      */
     public UnauthorizedException(CosmosError cosmosError, long lsn, String partitionKeyRangeId,
-                                 Map<String, String> responseHeaders) {
+                                 HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.UNAUTHORIZED, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -64,7 +62,7 @@ public class UnauthorizedException extends CosmosException {
                           String requestUri) {
         super(String.format("%s: %s", RMResources.Unauthorized, message),
             innerException,
-            HttpUtils.asMap(headers),
+            headers,
             HttpConstants.StatusCodes.UNAUTHORIZED,
             requestUri);
     }

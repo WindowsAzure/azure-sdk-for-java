@@ -3,13 +3,10 @@
 
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
 import com.azure.cosmos.implementation.directconnectivity.WFConstants;
-import com.azure.cosmos.implementation.http.HttpHeaders;
-
-import java.util.Map;
 
 /**
  * This exception is thrown when DocumentServiceRequest contains x-ms-documentdb-partitionkeyrangeid
@@ -38,7 +35,7 @@ public class PartitionKeyRangeGoneException extends CosmosException {
     public PartitionKeyRangeGoneException(CosmosError cosmosError,
                                           long lsn,
                                           String partitionKeyRangeId,
-                                          Map<String, String> responseHeaders) {
+                                          HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.GONE, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -71,13 +68,13 @@ public class PartitionKeyRangeGoneException extends CosmosException {
      * @param requestUriString the request uri string
      */
     public PartitionKeyRangeGoneException(String message, HttpHeaders headers, String requestUriString) {
-        super(message, null, HttpUtils.asMap(headers), HttpConstants.StatusCodes.GONE, requestUriString);
+        super(message, null, headers, HttpConstants.StatusCodes.GONE, requestUriString);
         this.setSubstatus();
     }
 
     PartitionKeyRangeGoneException(String message, Exception innerException, HttpHeaders headers,
                                    String requestUriString) {
-        super(message, innerException, HttpUtils.asMap(headers), HttpConstants.StatusCodes.GONE, requestUriString);
+        super(message, innerException, headers, HttpConstants.StatusCodes.GONE, requestUriString);
         this.setSubstatus();
     }
 

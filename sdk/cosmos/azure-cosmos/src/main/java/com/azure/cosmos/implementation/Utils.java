@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.implementation.apachecommons.lang.StringUtils;
 import com.azure.cosmos.implementation.uuid.EthernetAddress;
@@ -67,6 +68,21 @@ public class Utils {
         Utils.simpleObjectMapper.configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false);
 
         Utils.simpleObjectMapper.registerModule(new AfterburnerModule());
+    }
+
+    public  static HttpHeaders clone(HttpHeaders inputHeaders) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        inputHeaders.forEach(entry -> httpHeaders.put(entry.getName(), entry.getValue()));
+
+        return httpHeaders;
+    }
+
+    public static HttpHeaders newHeadersWithRequestCharge(double requestCharge) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.put(HttpConstants.Headers.REQUEST_CHARGE,
+            String.valueOf(requestCharge));
+
+        return  httpHeaders;
     }
 
     public static byte[] getUTF8BytesOrNull(String str) {

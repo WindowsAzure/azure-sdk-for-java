@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.implementation.directconnectivity.rntbd;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.implementation.ContentSerializationFormat;
@@ -27,7 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.azure.cosmos.implementation.HttpConstants.HttpHeaders;
+import static com.azure.cosmos.implementation.HttpConstants.Headers;
 import static com.azure.cosmos.implementation.HttpConstants.HeaderValues;
 import static com.azure.cosmos.implementation.directconnectivity.WFConstants.BackendHeaders;
 import static com.azure.cosmos.implementation.directconnectivity.rntbd.RntbdConstants.RntbdConsistencyLevel;
@@ -67,7 +68,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         this.getReplicaPath().setValue(args.replicaPath());
         this.getTransportRequestID().setValue(args.transportRequestId());
 
-        final Map<String, String> headers = request.getHeaders();
+        final HttpHeaders headers = request.getHeaders();
 
         // Special-case headers
 
@@ -117,46 +118,46 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         // Normal headers (Strings, Ints, Longs, etc.)
 
         this.fillTokenFromHeader(headers, this::getAllowTentativeWrites, BackendHeaders.ALLOW_TENTATIVE_WRITES);
-        this.fillTokenFromHeader(headers, this::getAuthorizationToken, HttpHeaders.AUTHORIZATION);
+        this.fillTokenFromHeader(headers, this::getAuthorizationToken, Headers.AUTHORIZATION);
         this.fillTokenFromHeader(headers, this::getBinaryPassThroughRequest, BackendHeaders.BINARY_PASSTHROUGH_REQUEST);
         this.fillTokenFromHeader(headers, this::getBindReplicaDirective, BackendHeaders.BIND_REPLICA_DIRECTIVE);
-        this.fillTokenFromHeader(headers, this::getClientRetryAttemptCount, HttpHeaders.CLIENT_RETRY_ATTEMPT_COUNT);
+        this.fillTokenFromHeader(headers, this::getClientRetryAttemptCount, Headers.CLIENT_RETRY_ATTEMPT_COUNT);
         this.fillTokenFromHeader(headers, this::getCollectionPartitionIndex, BackendHeaders.COLLECTION_PARTITION_INDEX);
         this.fillTokenFromHeader(headers, this::getCollectionRid, BackendHeaders.COLLECTION_RID);
         this.fillTokenFromHeader(headers, this::getCollectionServiceIndex, BackendHeaders.COLLECTION_SERVICE_INDEX);
         this.fillTokenFromHeader(headers, this::getEffectivePartitionKey, BackendHeaders.EFFECTIVE_PARTITION_KEY);
         this.fillTokenFromHeader(headers, this::getEnableDynamicRidRangeAllocation, BackendHeaders.ENABLE_DYNAMIC_RID_RANGE_ALLOCATION);
-        this.fillTokenFromHeader(headers, this::getFilterBySchemaRid, HttpHeaders.FILTER_BY_SCHEMA_RESOURCE_ID);
-        this.fillTokenFromHeader(headers, this::getGatewaySignature, HttpHeaders.GATEWAY_SIGNATURE);
+        this.fillTokenFromHeader(headers, this::getFilterBySchemaRid, Headers.FILTER_BY_SCHEMA_RESOURCE_ID);
+        this.fillTokenFromHeader(headers, this::getGatewaySignature, Headers.GATEWAY_SIGNATURE);
         this.fillTokenFromHeader(headers, this::getPartitionCount, BackendHeaders.PARTITION_COUNT);
-        this.fillTokenFromHeader(headers, this::getPartitionKey, HttpHeaders.PARTITION_KEY);
-        this.fillTokenFromHeader(headers, this::getPartitionKeyRangeId, HttpHeaders.PARTITION_KEY_RANGE_ID);
+        this.fillTokenFromHeader(headers, this::getPartitionKey, Headers.PARTITION_KEY);
+        this.fillTokenFromHeader(headers, this::getPartitionKeyRangeId, Headers.PARTITION_KEY_RANGE_ID);
         this.fillTokenFromHeader(headers, this::getPartitionResourceFilter, BackendHeaders.PARTITION_RESOURCE_FILTER);
-        this.fillTokenFromHeader(headers, this::getPostTriggerExclude, HttpHeaders.POST_TRIGGER_EXCLUDE);
-        this.fillTokenFromHeader(headers, this::getPostTriggerInclude, HttpHeaders.POST_TRIGGER_INCLUDE);
-        this.fillTokenFromHeader(headers, this::getPreTriggerExclude, HttpHeaders.PRE_TRIGGER_EXCLUDE);
-        this.fillTokenFromHeader(headers, this::getPreTriggerInclude, HttpHeaders.PRE_TRIGGER_INCLUDE);
+        this.fillTokenFromHeader(headers, this::getPostTriggerExclude, Headers.POST_TRIGGER_EXCLUDE);
+        this.fillTokenFromHeader(headers, this::getPostTriggerInclude, Headers.POST_TRIGGER_INCLUDE);
+        this.fillTokenFromHeader(headers, this::getPreTriggerExclude, Headers.PRE_TRIGGER_EXCLUDE);
+        this.fillTokenFromHeader(headers, this::getPreTriggerInclude, Headers.PRE_TRIGGER_INCLUDE);
         this.fillTokenFromHeader(headers, this::getPrimaryMasterKey, BackendHeaders.PRIMARY_MASTER_KEY);
         this.fillTokenFromHeader(headers, this::getPrimaryReadonlyKey, BackendHeaders.PRIMARY_READONLY_KEY);
-        this.fillTokenFromHeader(headers, this::getRemainingTimeInMsOnClientRequest, HttpHeaders.REMAINING_TIME_IN_MS_ON_CLIENT_REQUEST);
+        this.fillTokenFromHeader(headers, this::getRemainingTimeInMsOnClientRequest, Headers.REMAINING_TIME_IN_MS_ON_CLIENT_REQUEST);
         this.fillTokenFromHeader(headers, this::getResourceSchemaName, BackendHeaders.RESOURCE_SCHEMA_NAME);
-        this.fillTokenFromHeader(headers, this::getResourceTokenExpiry, HttpHeaders.RESOURCE_TOKEN_EXPIRY);
-        this.fillTokenFromHeader(headers, this::getRestoreMetadataFilter, HttpHeaders.RESTORE_METADATA_FILTER);
+        this.fillTokenFromHeader(headers, this::getResourceTokenExpiry, Headers.RESOURCE_TOKEN_EXPIRY);
+        this.fillTokenFromHeader(headers, this::getRestoreMetadataFilter, Headers.RESTORE_METADATA_FILTER);
         this.fillTokenFromHeader(headers, this::getRestoreParams, BackendHeaders.RESTORE_PARAMS);
         this.fillTokenFromHeader(headers, this::getSecondaryMasterKey, BackendHeaders.SECONDARY_MASTER_KEY);
         this.fillTokenFromHeader(headers, this::getSecondaryReadonlyKey, BackendHeaders.SECONDARY_READONLY_KEY);
-        this.fillTokenFromHeader(headers, this::getSessionToken, HttpHeaders.SESSION_TOKEN);
-        this.fillTokenFromHeader(headers, this::getSharedOfferThroughput, HttpHeaders.SHARED_OFFER_THROUGHPUT);
-        this.fillTokenFromHeader(headers, this::getTargetGlobalCommittedLsn, HttpHeaders.TARGET_GLOBAL_COMMITTED_LSN);
-        this.fillTokenFromHeader(headers, this::getTargetLsn, HttpHeaders.TARGET_LSN);
+        this.fillTokenFromHeader(headers, this::getSessionToken, Headers.SESSION_TOKEN);
+        this.fillTokenFromHeader(headers, this::getSharedOfferThroughput, Headers.SHARED_OFFER_THROUGHPUT);
+        this.fillTokenFromHeader(headers, this::getTargetGlobalCommittedLsn, Headers.TARGET_GLOBAL_COMMITTED_LSN);
+        this.fillTokenFromHeader(headers, this::getTargetLsn, Headers.TARGET_LSN);
         this.fillTokenFromHeader(headers, this::getTimeToLiveInSeconds, BackendHeaders.TIME_TO_LIVE_IN_SECONDS);
-        this.fillTokenFromHeader(headers, this::getTransportRequestID, HttpHeaders.TRANSPORT_REQUEST_ID);
+        this.fillTokenFromHeader(headers, this::getTransportRequestID, Headers.TRANSPORT_REQUEST_ID);
 
         // Will be null in case of direct, which is fine - BE will use the value slice the connection context this.
         // When this is used in Gateway, the header value will be populated with the proxied HTTP request's header,
         // and BE will respect the per-request value.
 
-        this.fillTokenFromHeader(headers, this::getClientVersion, HttpHeaders.VERSION);
+        this.fillTokenFromHeader(headers, this::getClientVersion, Headers.VERSION);
     }
 
     private RntbdRequestHeaders(ByteBuf in) {
@@ -564,60 +565,59 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         return this.get(RntbdRequestHeader.UserName);
     }
 
-    private void addAimHeader(final Map<String, String> headers) {
+    private void addAimHeader(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.A_IM);
-
+        final String value = headers.getValue(Headers.A_IM);
         if (StringUtils.isNotEmpty(value)) {
             this.getAIM().setValue(value);
         }
     }
 
-    private void addAllowScanOnQuery(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.ENABLE_SCAN_IN_QUERY);
+    private void addAllowScanOnQuery(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.ENABLE_SCAN_IN_QUERY);
         if (StringUtils.isNotEmpty(value)) {
             this.getEnableScanInQuery().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addBinaryIdIfPresent(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.BINARY_ID);
+    private void addBinaryIdIfPresent(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.BINARY_ID);
         if (StringUtils.isNotEmpty(value)) {
             this.getBinaryId().setValue(Base64.getDecoder().decode(value));
         }
     }
 
-    private void addCanCharge(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.CAN_CHARGE);
+    private void addCanCharge(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.CAN_CHARGE);
         if (StringUtils.isNotEmpty(value)) {
             this.getCanCharge().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addCanOfferReplaceComplete(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.CAN_OFFER_REPLACE_COMPLETE);
+    private void addCanOfferReplaceComplete(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.CAN_OFFER_REPLACE_COMPLETE);
         if (StringUtils.isNotEmpty(value)) {
             this.getCanOfferReplaceComplete().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addCanThrottle(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.CAN_THROTTLE);
+    private void addCanThrottle(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.CAN_THROTTLE);
         if (StringUtils.isNotEmpty(value)) {
             this.getCanThrottle().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addCollectionRemoteStorageSecurityIdentifier(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.COLLECTION_REMOTE_STORAGE_SECURITY_IDENTIFIER);
+    private void addCollectionRemoteStorageSecurityIdentifier(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.COLLECTION_REMOTE_STORAGE_SECURITY_IDENTIFIER);
         if (StringUtils.isNotEmpty(value)) {
             this.getCollectionRemoteStorageSecurityIdentifier().setValue(value);
         }
     }
 
-    private void addConsistencyLevelHeader(final Map<String, String> headers) {
+    private void addConsistencyLevelHeader(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.CONSISTENCY_LEVEL);
+        final String value = headers.getValue(Headers.CONSISTENCY_LEVEL);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -625,7 +625,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (level == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.CONSISTENCY_LEVEL,
+                    Headers.CONSISTENCY_LEVEL,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -653,9 +653,9 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addContentSerializationFormat(final Map<String, String> headers) {
+    private void addContentSerializationFormat(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.CONTENT_SERIALIZATION_FORMAT);
+        final String value = headers.getValue(Headers.CONTENT_SERIALIZATION_FORMAT);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -665,7 +665,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (format == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.CONTENT_SERIALIZATION_FORMAT,
+                    Headers.CONTENT_SERIALIZATION_FORMAT,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -690,15 +690,15 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addDateHeader(final Map<String, String> headers) {
+    private void addDateHeader(final HttpHeaders headers) {
 
         // Since the HTTP date header is overridden by some proxies/http client libraries, we support an additional date
         // header and prefer that to the (regular) date header
 
-        String value = headers.get(HttpHeaders.X_DATE);
+        String value = headers.getValue(Headers.X_DATE);
 
         if (StringUtils.isEmpty(value)) {
-            value = headers.get(HttpHeaders.HTTP_DATE);
+            value = headers.getValue(Headers.HTTP_DATE);
         }
 
         if (StringUtils.isNotEmpty(value)) {
@@ -706,44 +706,44 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addDisableRUPerMinuteUsage(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.DISABLE_RU_PER_MINUTE_USAGE);
+    private void addDisableRUPerMinuteUsage(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.DISABLE_RU_PER_MINUTE_USAGE);
         if (StringUtils.isNotEmpty(value)) {
             this.getDisableRUPerMinuteUsage().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addEmitVerboseTracesInQuery(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.EMIT_VERBOSE_TRACES_IN_QUERY);
+    private void addEmitVerboseTracesInQuery(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.EMIT_VERBOSE_TRACES_IN_QUERY);
         if (StringUtils.isNotEmpty(value)) {
             this.getEmitVerboseTracesInQuery().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addEnableLogging(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.ENABLE_LOGGING);
+    private void addEnableLogging(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.ENABLE_LOGGING);
         if (StringUtils.isNotEmpty(value)) {
             this.getEnableLogging().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addEnableLowPrecisionOrderBy(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.ENABLE_LOW_PRECISION_ORDER_BY);
+    private void addEnableLowPrecisionOrderBy(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.ENABLE_LOW_PRECISION_ORDER_BY);
         if (StringUtils.isNotEmpty(value)) {
             this.getEnableLowPrecisionOrderBy().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addEntityId(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.ENTITY_ID);
+    private void addEntityId(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.ENTITY_ID);
         if (StringUtils.isNotEmpty(value)) {
             this.getEntityId().setValue(value);
         }
     }
 
-    private void addEnumerationDirection(final Map<String, String> headers) {
+    private void addEnumerationDirection(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.ENUMERATION_DIRECTION);
+        final String value = headers.getValue(Headers.ENUMERATION_DIRECTION);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -751,7 +751,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (direction == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.ENUMERATION_DIRECTION,
+                    Headers.ENUMERATION_DIRECTION,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -769,16 +769,16 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addExcludeSystemProperties(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.EXCLUDE_SYSTEM_PROPERTIES);
+    private void addExcludeSystemProperties(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.EXCLUDE_SYSTEM_PROPERTIES);
         if (StringUtils.isNotEmpty(value)) {
             this.getExcludeSystemProperties().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addFanoutOperationStateHeader(final Map<String, String> headers) {
+    private void addFanoutOperationStateHeader(final HttpHeaders headers) {
 
-        final String value = headers.get(BackendHeaders.FANOUT_OPERATION_STATE);
+        final String value = headers.getValue(BackendHeaders.FANOUT_OPERATION_STATE);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -804,16 +804,16 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addIfModifiedSinceHeader(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.IF_MODIFIED_SINCE);
+    private void addIfModifiedSinceHeader(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.IF_MODIFIED_SINCE);
         if (StringUtils.isNotEmpty(value)) {
             this.getIfModifiedSince().setValue(value);
         }
     }
 
-    private void addIndexingDirectiveHeader(final Map<String, String> headers) {
+    private void addIndexingDirectiveHeader(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.INDEXING_DIRECTIVE);
+        final String value = headers.getValue(Headers.INDEXING_DIRECTIVE);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -821,7 +821,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (directive == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.INDEXING_DIRECTIVE,
+                    Headers.INDEXING_DIRECTIVE,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -842,45 +842,45 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addIsAutoScaleRequest(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.IS_AUTO_SCALE_REQUEST);
+    private void addIsAutoScaleRequest(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.IS_AUTO_SCALE_REQUEST);
         if (StringUtils.isNotEmpty(value)) {
             this.getIsAutoScaleRequest().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addIsFanout(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.IS_FANOUT_REQUEST);
+    private void addIsFanout(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.IS_FANOUT_REQUEST);
         if (StringUtils.isNotEmpty(value)) {
             this.getIsFanout().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addIsReadOnlyScript(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.IS_READ_ONLY_SCRIPT);
+    private void addIsReadOnlyScript(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.IS_READ_ONLY_SCRIPT);
         if (StringUtils.isNotEmpty(value)) {
             this.getIsReadOnlyScript().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addIsUserRequest(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.IS_USER_REQUEST);
+    private void addIsUserRequest(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.IS_USER_REQUEST);
         if (StringUtils.isNotEmpty(value)) {
             this.getIsUserRequest().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addMatchHeader(final Map<String, String> headers, final RntbdOperationType operationType) {
+    private void addMatchHeader(final HttpHeaders headers, final RntbdOperationType operationType) {
 
         String match = null;
 
         switch (operationType) {
             case Read:
             case ReadFeed:
-                match = headers.get(HttpHeaders.IF_NONE_MATCH);
+                match = headers.getValue(Headers.IF_NONE_MATCH);
                 break;
             default:
-                match = headers.get(HttpHeaders.IF_MATCH);
+                match = headers.getValue(Headers.IF_MATCH);
                 break;
         }
 
@@ -889,9 +889,9 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addMigrateCollectionDirectiveHeader(final Map<String, String> headers) {
+    private void addMigrateCollectionDirectiveHeader(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.MIGRATE_COLLECTION_DIRECTIVE);
+        final String value = headers.getValue(Headers.MIGRATE_COLLECTION_DIRECTIVE);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -899,7 +899,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (directive == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.MIGRATE_COLLECTION_DIRECTIVE,
+                    Headers.MIGRATE_COLLECTION_DIRECTIVE,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -918,61 +918,61 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addPageSize(final Map<String, String> headers) {
+    private void addPageSize(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.PAGE_SIZE);
+        final String value = headers.getValue(Headers.PAGE_SIZE);
 
         if (StringUtils.isNotEmpty(value)) {
-            final long aLong = parseLong(HttpHeaders.PAGE_SIZE, value, -1, 0xFFFFFFFFL);
+            final long aLong = parseLong(Headers.PAGE_SIZE, value, -1, 0xFFFFFFFFL);
             this.getPageSize().setValue((int)(aLong < 0 ? 0xFFFFFFFFL : aLong));
         }
     }
 
-    private void addPopulateCollectionThroughputInfo(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.POPULATE_COLLECTION_THROUGHPUT_INFO);
+    private void addPopulateCollectionThroughputInfo(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.POPULATE_COLLECTION_THROUGHPUT_INFO);
         if (StringUtils.isNotEmpty(value)) {
             this.getPopulateCollectionThroughputInfo().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addPopulatePartitionStatistics(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.POPULATE_PARTITION_STATISTICS);
+    private void addPopulatePartitionStatistics(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.POPULATE_PARTITION_STATISTICS);
         if (StringUtils.isNotEmpty(value)) {
             this.getPopulatePartitionStatistics().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addPopulateQueryMetrics(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.POPULATE_QUERY_METRICS);
+    private void addPopulateQueryMetrics(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.POPULATE_QUERY_METRICS);
         if (StringUtils.isNotEmpty(value)) {
             this.getPopulateQueryMetrics().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addPopulateQuotaInfo(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.POPULATE_QUOTA_INFO);
+    private void addPopulateQuotaInfo(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.POPULATE_QUOTA_INFO);
         if (StringUtils.isNotEmpty(value)) {
             this.getPopulateQuotaInfo().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addProfileRequest(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.PROFILE_REQUEST);
+    private void addProfileRequest(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.PROFILE_REQUEST);
         if (StringUtils.isNotEmpty(value)) {
             this.getProfileRequest().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addQueryForceScan(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.FORCE_QUERY_SCAN);
+    private void addQueryForceScan(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.FORCE_QUERY_SCAN);
         if (StringUtils.isNotEmpty(value)) {
             this.getForceQueryScan().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addRemoteStorageType(final Map<String, String> headers) {
+    private void addRemoteStorageType(final HttpHeaders headers) {
 
-        final String value = headers.get(BackendHeaders.REMOTE_STORAGE_TYPE);
+        final String value = headers.getValue(BackendHeaders.REMOTE_STORAGE_TYPE);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -1081,26 +1081,26 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
         }
     }
 
-    private void addResponseContinuationTokenLimitInKb(final Map<String, String> headers) {
+    private void addResponseContinuationTokenLimitInKb(final HttpHeaders headers) {
 
-        final String value = headers.get(HttpHeaders.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB);
+        final String value = headers.getValue(Headers.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB);
 
         if (StringUtils.isNotEmpty(value)) {
-            final long aLong = parseLong(HttpHeaders.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB, value, 0, 0xFFFFFFFFL);
+            final long aLong = parseLong(Headers.RESPONSE_CONTINUATION_TOKEN_LIMIT_IN_KB, value, 0, 0xFFFFFFFFL);
             this.getResponseContinuationTokenLimitInKb().setValue((int)(aLong < 0 ? 0xFFFFFFFFL : aLong));
         }
     }
 
-    private void addShareThroughput(final Map<String, String> headers) {
-        final String value = headers.get(BackendHeaders.SHARE_THROUGHPUT);
+    private void addShareThroughput(final HttpHeaders headers) {
+        final String value = headers.getValue(BackendHeaders.SHARE_THROUGHPUT);
         if (StringUtils.isNotEmpty(value)) {
             this.getShareThroughput().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addStartAndEndKeys(final Map<String, String> headers) {
+    private void addStartAndEndKeys(final HttpHeaders headers) {
 
-        String value = headers.get(HttpHeaders.READ_FEED_KEY_TYPE);
+        String value = headers.getValue(Headers.READ_FEED_KEY_TYPE);
 
         if (StringUtils.isNotEmpty(value)) {
 
@@ -1108,7 +1108,7 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
             if (type == null) {
                 final String reason = String.format(Locale.ROOT, RMResources.InvalidRequestHeaderValue,
-                    HttpHeaders.READ_FEED_KEY_TYPE,
+                    Headers.READ_FEED_KEY_TYPE,
                     value);
                 throw new IllegalStateException(reason);
             }
@@ -1127,55 +1127,55 @@ final class RntbdRequestHeaders extends RntbdTokenStream<RntbdRequestHeader> {
 
         final Base64.Decoder decoder = Base64.getDecoder();
 
-        value = headers.get(HttpHeaders.START_ID);
+        value = headers.getValue(Headers.START_ID);
 
         if (StringUtils.isNotEmpty(value)) {
             this.getStartId().setValue(decoder.decode(value));
         }
 
-        value = headers.get(HttpHeaders.END_ID);
+        value = headers.getValue(Headers.END_ID);
 
         if (StringUtils.isNotEmpty(value)) {
             this.getEndId().setValue(decoder.decode(value));
         }
 
-        value = headers.get(HttpHeaders.START_EPK);
+        value = headers.getValue(Headers.START_EPK);
 
         if (StringUtils.isNotEmpty(value)) {
             this.getStartEpk().setValue(decoder.decode(value));
         }
 
-        value = headers.get(HttpHeaders.END_EPK);
+        value = headers.getValue(Headers.END_EPK);
 
         if (StringUtils.isNotEmpty(value)) {
             this.getEndEpk().setValue(decoder.decode(value));
         }
     }
 
-    private void addSupportSpatialLegacyCoordinates(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.SUPPORT_SPATIAL_LEGACY_COORDINATES);
+    private void addSupportSpatialLegacyCoordinates(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.SUPPORT_SPATIAL_LEGACY_COORDINATES);
         if (StringUtils.isNotEmpty(value)) {
             this.getSupportSpatialLegacyCoordinates().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addUsePolygonsSmallerThanAHemisphere(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.USE_POLYGONS_SMALLER_THAN_AHEMISPHERE);
+    private void addUsePolygonsSmallerThanAHemisphere(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.USE_POLYGONS_SMALLER_THAN_AHEMISPHERE);
         if (StringUtils.isNotEmpty(value)) {
             this.getUsePolygonsSmallerThanAHemisphere().setValue(Boolean.parseBoolean(value));
         }
     }
 
-    private void addReturnPreference(final Map<String, String> headers) {
-        final String value = headers.get(HttpHeaders.PREFER);
+    private void addReturnPreference(final HttpHeaders headers) {
+        final String value = headers.getValue(Headers.PREFER);
         if (StringUtils.isNotEmpty(value) && value.contains(HeaderValues.PREFER_RETURN_MINIMAL)) {
             this.getReturnPreference().setValue(true);
         }
     }
 
-    private void fillTokenFromHeader(final Map<String, String> headers, final Supplier<RntbdToken> supplier, final String name) {
+    private void fillTokenFromHeader(final HttpHeaders headers, final Supplier<RntbdToken> supplier, final String name) {
 
-        final String value = headers.get(name);
+        final String value = headers.getValue(name);
 
         if (StringUtils.isNotEmpty(value)) {
 

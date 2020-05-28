@@ -3,10 +3,9 @@
 
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 
 import java.net.URI;
 import java.util.Map;
@@ -30,7 +29,7 @@ public class ServiceUnavailableException extends CosmosException {
     public ServiceUnavailableException(CosmosError cosmosError,
                                        long lsn,
                                        String partitionKeyRangeId,
-                                       Map<String, String> responseHeaders) {
+                                       HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.SERVICE_UNAVAILABLE, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -73,7 +72,7 @@ public class ServiceUnavailableException extends CosmosException {
                                        String requestUriString) {
         super(String.format("%s: %s", RMResources.ServiceUnavailable, message),
             innerException,
-            HttpUtils.asMap(headers),
+            headers,
             HttpConstants.StatusCodes.SERVICE_UNAVAILABLE,
             requestUriString);
     }

@@ -38,7 +38,7 @@ public interface StoreResponseValidator {
             validators.add(new StoreResponseValidator() {
                 @Override
                 public void validate(StoreResponse resp) {
-                    assertThat(Arrays.asList(resp.getResponseHeaderNames())).asList().contains(headerKey);
+                    assertThat(resp.getHeaders().getValue(headerKey)).isNotNull();
                 }
             });
             return this;
@@ -48,9 +48,8 @@ public interface StoreResponseValidator {
             validators.add(new StoreResponseValidator() {
                 @Override
                 public void validate(StoreResponse resp) {
-                    assertThat(Arrays.asList(resp.getResponseHeaderNames())).asList().contains(headerKey);
-                    int index = Arrays.asList(resp.getResponseHeaderNames()).indexOf(headerKey);
-                    assertThat(resp.getResponseHeaderValues()[index]).isEqualTo(headerValue);
+                    assertThat(resp.getHeaders().getValue(headerKey)).isNotNull();
+                    assertThat(resp.getHeaders().getValue(headerKey)).matches(headerValue);
                 }
             });
             return this;
@@ -61,10 +60,8 @@ public interface StoreResponseValidator {
             validators.add(new StoreResponseValidator() {
                 @Override
                 public void validate(StoreResponse resp) {
-                    assertThat(Arrays.asList(resp.getResponseHeaderNames())).asList().contains(headerKey);
-                    int index = Arrays.asList(resp.getResponseHeaderNames()).indexOf(headerKey);
-                    String value = resp.getResponseHeaderValues()[index];
-                    condition.matches(value);
+                    assertThat(resp.getHeaders().getValue(headerKey)).isNotNull();
+                    condition.matches(resp.getHeaders().getValue(headerKey));
                 }
             });
             return this;
@@ -120,12 +117,12 @@ public interface StoreResponseValidator {
         }
 
         public Builder withRequestCharge(double value) {
-            withHeader(HttpConstants.HttpHeaders.REQUEST_CHARGE, Double.toString(value));
+            withHeader(HttpConstants.Headers.REQUEST_CHARGE, Double.toString(value));
             return this;
         }
 
         public Builder withRequestChargeGreaterThanOrEqualTo(double value) {
-            withHeaderValueCondition(HttpConstants.HttpHeaders.REQUEST_CHARGE, new Condition<>(s -> {
+            withHeaderValueCondition(HttpConstants.Headers.REQUEST_CHARGE, new Condition<>(s -> {
                 try {
                     double parsed = Double.parseDouble(s);
                     return parsed >= value;
@@ -137,7 +134,7 @@ public interface StoreResponseValidator {
         }
 
         public Builder withRequestChargeLessThanOrEqualTo(double value) {
-            withHeaderValueCondition(HttpConstants.HttpHeaders.REQUEST_CHARGE, new Condition<>(s -> {
+            withHeaderValueCondition(HttpConstants.Headers.REQUEST_CHARGE, new Condition<>(s -> {
                 try {
                     double parsed = Double.parseDouble(s);
                     return parsed <= value;

@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeader;
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosException;
@@ -10,7 +12,6 @@ import com.azure.cosmos.implementation.directconnectivity.DirectBridgeInternal;
 import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
 import com.azure.cosmos.implementation.directconnectivity.StoreResponse;
 import com.azure.cosmos.implementation.http.HttpClient;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 import com.azure.cosmos.implementation.http.HttpRequest;
 import com.azure.cosmos.implementation.http.HttpResponse;
 import com.azure.cosmos.implementation.http.ReactorNettyRequestRecord;
@@ -55,19 +56,19 @@ class RxGatewayStoreModel implements RxStoreModel {
             GlobalEndpointManager globalEndpointManager,
             HttpClient httpClient) {
         this.defaultHeaders = new HashMap<>();
-        this.defaultHeaders.put(HttpConstants.HttpHeaders.CACHE_CONTROL,
+        this.defaultHeaders.put(HttpConstants.Headers.CACHE_CONTROL,
                 "no-cache");
-        this.defaultHeaders.put(HttpConstants.HttpHeaders.VERSION,
+        this.defaultHeaders.put(HttpConstants.Headers.VERSION,
                 HttpConstants.Versions.CURRENT_VERSION);
 
         if (userAgentContainer == null) {
             userAgentContainer = new UserAgentContainer();
         }
 
-        this.defaultHeaders.put(HttpConstants.HttpHeaders.USER_AGENT, userAgentContainer.getUserAgent());
+        this.defaultHeaders.put(HttpConstants.Headers.USER_AGENT, userAgentContainer.getUserAgent());
 
         if (defaultConsistencyLevel != null) {
-            this.defaultHeaders.put(HttpConstants.HttpHeaders.CONSISTENCY_LEVEL,
+            this.defaultHeaders.put(HttpConstants.Headers.CONSISTENCY_LEVEL,
                     defaultConsistencyLevel.toString());
         }
 
@@ -109,18 +110,18 @@ class RxGatewayStoreModel implements RxStoreModel {
 
     private Mono<RxDocumentServiceResponse> query(RxDocumentServiceRequest request) {
         if(request.getOperationType() != OperationType.QueryPlan) {
-            request.getHeaders().put(HttpConstants.HttpHeaders.IS_QUERY, "true");
+            request.getHeaders().put(HttpConstants.Headers.IS_QUERY, "true");
         }
 
         switch (this.queryCompatibilityMode) {
             case SqlQuery:
-                request.getHeaders().put(HttpConstants.HttpHeaders.CONTENT_TYPE,
+                request.getHeaders().put(HttpConstants.Headers.CONTENT_TYPE,
                         RuntimeConstants.MediaTypes.SQL);
                 break;
             case Default:
             case Query:
             default:
-                request.getHeaders().put(HttpConstants.HttpHeaders.CONTENT_TYPE,
+                request.getHeaders().put(HttpConstants.Headers.CONTENT_TYPE,
                         RuntimeConstants.MediaTypes.QUERY_JSON);
                 break;
         }
@@ -165,24 +166,24 @@ class RxGatewayStoreModel implements RxStoreModel {
         }
     }
 
-    private HttpHeaders getHttpRequestHeaders(Map<String, String> headers) {
-        HttpHeaders httpHeaders = new HttpHeaders(this.defaultHeaders.size());
+    private HttpHeaders getHttpRequestHeaders(HttpHeaders reqeustheaders) {
+        HttpHeaders httpHeaders = new HttpHeaders();
         // Add default headers.
         for (Entry<String, String> entry : this.defaultHeaders.entrySet()) {
-            if (!headers.containsKey(entry.getKey())) {
+            if (reqeustheaders.getValue(entry.getKey()) == null) {
                 // populate default header only if there is no overwrite by the request header
-                httpHeaders.set(entry.getKey(), entry.getValue());
+                httpHeaders.put(entry.getKey(), entry.getValue());
             }
         }
 
         // Add override headers.
-        if (headers != null) {
-            for (Entry<String, String> entry : headers.entrySet()) {
+        if (reqeustheaders != null) {
+            for (HttpHeader entry : reqeustheaders) {
                 if (entry.getValue() == null) {
                     // netty doesn't allow setting null value in header
-                    httpHeaders.set(entry.getKey(), "");
+                    httpHeaders.put(entry.getName(), "");
                 } else {
-                    httpHeaders.set(entry.getKey(), entry.getValue());
+                    httpHeaders.put(entry.getName(), entry.getValue());
                 }
             }
         }
@@ -273,8 +274,9 @@ class RxGatewayStoreModel implements RxStoreModel {
                                validateOrThrow(request, HttpResponseStatus.valueOf(httpResponseStatus), httpResponseHeaders, content);
 
                                // transforms to Observable<StoreResponse>
+                               HttpUtils.unescapeOwnerFullName(httpResponseHeaders);
                                StoreResponse rsp = new StoreResponse(httpResponseStatus,
-                                   HttpUtils.unescape(httpResponseHeaders.toMap().entrySet()),
+                                   httpResponseHeaders,
                                    content);
                                DirectBridgeInternal.setRequestTimeline(rsp, reactorNettyRequestRecord.takeTimelineSnapshot());
                                if (request.requestContext.cosmosDiagnostics != null) {
@@ -331,7 +333,7 @@ class RxGatewayStoreModel implements RxStoreModel {
                     String.format("%s, StatusCode: %s", cosmosError.getMessage(), statusCodeString),
                     cosmosError.getPartitionedQueryExecutionInfo());
 
-            CosmosException dce = BridgeInternal.createCosmosException(statusCode, cosmosError, headers.toMap());
+            CosmosException dce = BridgeInternal.createCosmosException(statusCode, cosmosError, headers);
             BridgeInternal.setRequestHeaders(dce, request.getHeaders());
             throw dce;
         }
@@ -402,11 +404,11 @@ class RxGatewayStoreModel implements RxStoreModel {
         );
     }
 
-    private void captureSessionToken(RxDocumentServiceRequest request, Map<String, String> responseHeaders) {
+    private void captureSessionToken(RxDocumentServiceRequest request, HttpHeaders responseHeaders) {
         if (request.getResourceType() == ResourceType.DocumentCollection && request.getOperationType() == OperationType.Delete) {
             String resourceId;
             if (request.getIsNameBased()) {
-                resourceId = responseHeaders.get(HttpConstants.HttpHeaders.OWNER_ID);
+                resourceId = responseHeaders.getValue(HttpConstants.Headers.OWNER_ID);
             } else {
                 resourceId = request.getResourceId();
             }
@@ -417,17 +419,17 @@ class RxGatewayStoreModel implements RxStoreModel {
     }
 
     private void applySessionToken(RxDocumentServiceRequest request) {
-        Map<String, String> headers = request.getHeaders();
+        HttpHeaders headers = request.getHeaders();
         Objects.requireNonNull(headers, "RxDocumentServiceRequest::headers is required and cannot be null");
 
-        if (!Strings.isNullOrEmpty(request.getHeaders().get(HttpConstants.HttpHeaders.SESSION_TOKEN))) {
+        if (!Strings.isNullOrEmpty(request.getHeaders().getValue(HttpConstants.Headers.SESSION_TOKEN))) {
             if (ReplicatedResourceClientUtils.isMasterResource(request.getResourceType())) {
-                request.getHeaders().remove(HttpConstants.HttpHeaders.SESSION_TOKEN);
+                request.getHeaders().remove(HttpConstants.Headers.SESSION_TOKEN);
             }
             return; //User is explicitly controlling the session.
         }
 
-        String requestConsistencyLevel = headers.get(HttpConstants.HttpHeaders.CONSISTENCY_LEVEL);
+        String requestConsistencyLevel = headers.getValue(HttpConstants.Headers.CONSISTENCY_LEVEL);
 
         boolean sessionConsistency =
                 this.defaultConsistencyLevel == ConsistencyLevel.SESSION ||
@@ -442,7 +444,7 @@ class RxGatewayStoreModel implements RxStoreModel {
         String sessionToken = this.sessionContainer.resolveGlobalSessionToken(request);
 
         if (!Strings.isNullOrEmpty(sessionToken)) {
-            headers.put(HttpConstants.HttpHeaders.SESSION_TOKEN, sessionToken);
+            headers.put(HttpConstants.Headers.SESSION_TOKEN, sessionToken);
         }
     }
 }

@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.implementation.directconnectivity;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
 import com.azure.cosmos.implementation.AuthorizationTokenType;
@@ -30,7 +31,6 @@ import com.azure.cosmos.implementation.apachecommons.lang.StringUtils;
 import com.azure.cosmos.implementation.apachecommons.lang.tuple.Pair;
 import com.azure.cosmos.implementation.caches.AsyncCache;
 import com.azure.cosmos.implementation.http.HttpClient;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 import com.azure.cosmos.implementation.http.HttpRequest;
 import com.azure.cosmos.implementation.http.HttpResponse;
 import com.azure.cosmos.implementation.routing.PartitionKeyRangeIdentity;
@@ -116,10 +116,10 @@ public class GatewayAddressCache implements IAddressCache {
         }
 
         defaultRequestHeaders = new HashMap<>();
-        defaultRequestHeaders.put(HttpConstants.HttpHeaders.USER_AGENT, userAgent.getUserAgent());
+        defaultRequestHeaders.put(HttpConstants.Headers.USER_AGENT, userAgent.getUserAgent());
 
         // Set requested API version header for version enforcement.
-        defaultRequestHeaders.put(HttpConstants.HttpHeaders.VERSION, HttpConstants.Versions.CURRENT_VERSION);
+        defaultRequestHeaders.put(HttpConstants.Headers.VERSION, HttpConstants.Versions.CURRENT_VERSION);
     }
 
     public GatewayAddressCache(
@@ -255,19 +255,19 @@ public class GatewayAddressCache implements IAddressCache {
 
         addressQuery.put(HttpConstants.QueryStrings.URL, HttpUtils.urlEncode(entryUrl));
 
-        HashMap<String, String> headers = new HashMap<>(defaultRequestHeaders);
+        HttpHeaders headers = new HttpHeaders(defaultRequestHeaders);
         if (forceRefresh) {
-            headers.put(HttpConstants.HttpHeaders.FORCE_REFRESH, "true");
+            headers.put(HttpConstants.Headers.FORCE_REFRESH, "true");
         }
 
         if(request.forceCollectionRoutingMapRefresh) {
-            headers.put(HttpConstants.HttpHeaders.FORCE_COLLECTION_ROUTING_MAP_REFRESH, "true");
+            headers.put(HttpConstants.Headers.FORCE_COLLECTION_ROUTING_MAP_REFRESH, "true");
         }
 
         addressQuery.put(HttpConstants.QueryStrings.FILTER, HttpUtils.urlEncode(this.protocolFilter));
 
         addressQuery.put(HttpConstants.QueryStrings.PARTITION_KEY_RANGE_IDS, String.join(",", partitionKeyRangeIds));
-        headers.put(HttpConstants.HttpHeaders.X_DATE, Utils.nowAsRFC1123());
+        headers.put(HttpConstants.Headers.X_DATE, Utils.nowAsRFC1123());
         String token;
 
         token = this.tokenProvider.getUserAuthorizationToken(
@@ -291,17 +291,12 @@ public class GatewayAddressCache implements IAddressCache {
         }
 
         token = HttpUtils.urlEncode(token);
-        headers.put(HttpConstants.HttpHeaders.AUTHORIZATION, token);
+        headers.put(HttpConstants.Headers.AUTHORIZATION, token);
         URI targetEndpoint = Utils.setQuery(this.addressEndpoint.toString(), Utils.createQuery(addressQuery));
         String identifier = logAddressResolutionStart(request, targetEndpoint);
 
-        HttpHeaders httpHeaders = new HttpHeaders(headers.size());
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            httpHeaders.set(entry.getKey(), entry.getValue());
-        }
-
         ZonedDateTime addressCallStartTime = ZonedDateTime.now(ZoneOffset.UTC);
-        HttpRequest httpRequest = new HttpRequest(HttpMethod.GET, targetEndpoint, targetEndpoint.getPort(), httpHeaders);
+        HttpRequest httpRequest = new HttpRequest(HttpMethod.GET, targetEndpoint, targetEndpoint.getPort(), headers);
 
         Mono<HttpResponse> httpResponseMono = this.httpClient.send(httpRequest);
 
@@ -454,22 +449,22 @@ public class GatewayAddressCache implements IAddressCache {
         );
         HashMap<String, String> queryParameters = new HashMap<>();
         queryParameters.put(HttpConstants.QueryStrings.URL, HttpUtils.urlEncode(entryUrl));
-        HashMap<String, String> headers = new HashMap<>(defaultRequestHeaders);
+        HttpHeaders headers = new HttpHeaders(defaultRequestHeaders);
 
         if (forceRefresh) {
-            headers.put(HttpConstants.HttpHeaders.FORCE_REFRESH, "true");
+            headers.put(HttpConstants.Headers.FORCE_REFRESH, "true");
         }
 
         if (useMasterCollectionResolver) {
-            headers.put(HttpConstants.HttpHeaders.USE_MASTER_COLLECTION_RESOLVER, "true");
+            headers.put(HttpConstants.Headers.USE_MASTER_COLLECTION_RESOLVER, "true");
         }
 
         if(request.forceCollectionRoutingMapRefresh) {
-            headers.put(HttpConstants.HttpHeaders.FORCE_COLLECTION_ROUTING_MAP_REFRESH, "true");
+            headers.put(HttpConstants.Headers.FORCE_COLLECTION_ROUTING_MAP_REFRESH, "true");
         }
 
         queryParameters.put(HttpConstants.QueryStrings.FILTER, HttpUtils.urlEncode(this.protocolFilter));
-        headers.put(HttpConstants.HttpHeaders.X_DATE, Utils.nowAsRFC1123());
+        headers.put(HttpConstants.Headers.X_DATE, Utils.nowAsRFC1123());
         String token = this.tokenProvider.getUserAuthorizationToken(
                 resourceAddress,
                 resourceType,
@@ -478,17 +473,12 @@ public class GatewayAddressCache implements IAddressCache {
                 AuthorizationTokenType.PrimaryMasterKey,
                 properties);
 
-        headers.put(HttpConstants.HttpHeaders.AUTHORIZATION, HttpUtils.urlEncode(token));
+        headers.put(HttpConstants.Headers.AUTHORIZATION, HttpUtils.urlEncode(token));
         URI targetEndpoint = Utils.setQuery(this.addressEndpoint.toString(), Utils.createQuery(queryParameters));
         String identifier = logAddressResolutionStart(request, targetEndpoint);
 
-        HttpHeaders defaultHttpHeaders = new HttpHeaders(headers.size());
-        for (Map.Entry<String, String> entry : headers.entrySet()) {
-            defaultHttpHeaders.set(entry.getKey(), entry.getValue());
-        }
-
         HttpRequest httpRequest;
-        httpRequest = new HttpRequest(HttpMethod.GET, targetEndpoint, targetEndpoint.getPort(), defaultHttpHeaders);
+        httpRequest = new HttpRequest(HttpMethod.GET, targetEndpoint, targetEndpoint.getPort(), headers);
         ZonedDateTime addressCallStartTime = ZonedDateTime.now(ZoneOffset.UTC);
         Mono<HttpResponse> httpResponseMono = this.httpClient.send(httpRequest);
         Mono<RxDocumentServiceResponse> dsrObs = HttpClientUtils.parseResponseAsync(httpResponseMono, httpRequest);
@@ -539,7 +529,7 @@ public class GatewayAddressCache implements IAddressCache {
                 collection.getResourceId(),
                 ResourceType.DocumentCollection,
                 //       AuthorizationTokenType.PrimaryMasterKey
-                Collections.emptyMap());
+                new HttpHeaders());
         for (int i = 0; i < partitionKeyRangeIdentities.size(); i += batchSize) {
 
             int endIndex = i + batchSize;

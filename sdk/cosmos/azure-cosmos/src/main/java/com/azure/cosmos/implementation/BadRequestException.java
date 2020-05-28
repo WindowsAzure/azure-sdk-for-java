@@ -2,14 +2,11 @@
 // Licensed under the MIT License.
 package com.azure.cosmos.implementation;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.BridgeInternal;
 import com.azure.cosmos.CosmosException;
-import com.azure.cosmos.implementation.directconnectivity.HttpUtils;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * While this class is public, but it is not part of our published public APIs.
@@ -25,7 +22,7 @@ public class BadRequestException extends CosmosException {
      * @param innerException the inner exception
      */
     public BadRequestException(String message, Exception innerException) {
-        super(message, innerException, new HashMap<>(), HttpConstants.StatusCodes.BADREQUEST, null);
+        super(message, innerException, new HttpHeaders(), HttpConstants.StatusCodes.BADREQUEST, null);
     }
 
     /**
@@ -44,7 +41,7 @@ public class BadRequestException extends CosmosException {
      * @param responseHeaders the response headers
      */
     public BadRequestException(CosmosError cosmosError, long lsn, String partitionKeyRangeId,
-                               Map<String, String> responseHeaders) {
+                               HttpHeaders responseHeaders) {
         super(HttpConstants.StatusCodes.BADREQUEST, cosmosError, responseHeaders);
         BridgeInternal.setLSN(this, lsn);
         BridgeInternal.setPartitionKeyRangeId(this, partitionKeyRangeId);
@@ -84,7 +81,7 @@ public class BadRequestException extends CosmosException {
                         String requestUrlString) {
         super(String.format("%s: %s", RMResources.BadRequest, message),
             innerException,
-            HttpUtils.asMap(headers),
+            headers,
             HttpConstants.StatusCodes.BADREQUEST,
             requestUrlString);
     }

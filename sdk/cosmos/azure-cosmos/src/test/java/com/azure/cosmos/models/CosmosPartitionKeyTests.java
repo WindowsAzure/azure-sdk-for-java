@@ -3,6 +3,7 @@
 package com.azure.cosmos.models;
 
 import com.azure.core.credential.AzureKeyCredential;
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.DirectConnectionConfig;
 import com.azure.cosmos.implementation.ConnectionPolicy;
 import com.azure.cosmos.CosmosAsyncClient;
@@ -28,7 +29,6 @@ import com.azure.cosmos.implementation.TestConfigurations;
 import com.azure.cosmos.implementation.Utils;
 import com.azure.cosmos.implementation.http.HttpClient;
 import com.azure.cosmos.implementation.http.HttpClientConfig;
-import com.azure.cosmos.implementation.http.HttpHeaders;
 import com.azure.cosmos.implementation.http.HttpRequest;
 import com.azure.cosmos.rx.CosmosItemResponseValidator;
 import com.azure.cosmos.rx.TestSuiteBase;
@@ -91,12 +91,12 @@ public final class CosmosPartitionKeyTests extends TestSuiteBase {
         DocumentCollection collection = new DocumentCollection();
         collection.setId(NON_PARTITIONED_CONTAINER_ID);
 
-        HashMap<String, String> headers = new HashMap<String, String>();
-        headers.put(HttpConstants.HttpHeaders.X_DATE, Utils.nowAsRFC1123());
-        headers.put(HttpConstants.HttpHeaders.VERSION, "2018-09-17");
+        HttpHeaders headers = new HttpHeaders();
+        headers.put(HttpConstants.Headers.X_DATE, Utils.nowAsRFC1123());
+        headers.put(HttpConstants.Headers.VERSION, "2018-09-17");
         BaseAuthorizationTokenProvider base = new BaseAuthorizationTokenProvider(new AzureKeyCredential(TestConfigurations.MASTER_KEY));
         String authorization = base.generateKeyAuthorizationSignature(RequestVerb.POST, resourceId, Paths.COLLECTIONS_PATH_SEGMENT, headers);
-        headers.put(HttpConstants.HttpHeaders.AUTHORIZATION, URLEncoder.encode(authorization, "UTF-8"));
+        headers.put(HttpConstants.Headers.AUTHORIZATION, URLEncoder.encode(authorization, "UTF-8"));
         RxDocumentServiceRequest request = RxDocumentServiceRequest.create(OperationType.Create,
                 ResourceType.DocumentCollection, path, collection, headers, new RequestOptions());
 
@@ -118,7 +118,7 @@ public final class CosmosPartitionKeyTests extends TestSuiteBase {
         document.setId(NON_PARTITIONED_CONTAINER_DOCUEMNT_ID);
 
         authorization = base.generateKeyAuthorizationSignature(RequestVerb.POST, resourceId, Paths.DOCUMENTS_PATH_SEGMENT, headers);
-        headers.put(HttpConstants.HttpHeaders.AUTHORIZATION, URLEncoder.encode(authorization, "UTF-8"));
+        headers.put(HttpConstants.Headers.AUTHORIZATION, URLEncoder.encode(authorization, "UTF-8"));
         request = RxDocumentServiceRequest.create(OperationType.Create, ResourceType.Document, path,
                 document, headers, new RequestOptions());
 

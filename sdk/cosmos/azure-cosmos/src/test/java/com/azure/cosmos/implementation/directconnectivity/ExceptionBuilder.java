@@ -3,6 +3,7 @@
 
 package com.azure.cosmos.implementation.directconnectivity;
 
+import com.azure.core.http.HttpHeaders;
 import com.azure.cosmos.implementation.GoneException;
 import com.azure.cosmos.implementation.InvalidPartitionException;
 import com.azure.cosmos.implementation.PartitionIsMigratingException;
@@ -46,21 +47,21 @@ public class ExceptionBuilder {
     public GoneException asGoneException() {
         assert status == null;
         GoneException dce = new GoneException();
-        dce.getResponseHeaders().putAll(headerEntries.stream().collect(Collectors.toMap(i -> i.getKey(), i -> i.getValue())));
+        ExceptionBuilder.Merge(dce.getResponseHeaders(), headerEntries);
         return dce;
     }
 
     public InvalidPartitionException asInvalidPartitionException() {
         assert status == null;
         InvalidPartitionException dce = new InvalidPartitionException();
-        dce.getResponseHeaders().putAll(headerEntries.stream().collect(Collectors.toMap(i -> i.getKey(), i -> i.getValue())));
+        ExceptionBuilder.Merge(dce.getResponseHeaders(), headerEntries);
         return dce;
     }
 
     public PartitionKeyRangeGoneException asPartitionKeyRangeGoneException() {
         assert status == null;
         PartitionKeyRangeGoneException dce = new PartitionKeyRangeGoneException();
-        dce.getResponseHeaders().putAll(headerEntries.stream().collect(Collectors.toMap(i -> i.getKey(), i -> i.getValue())));
+        ExceptionBuilder.Merge(dce.getResponseHeaders(), headerEntries);
         return dce;
     }
 
@@ -68,14 +69,19 @@ public class ExceptionBuilder {
     public PartitionKeyRangeIsSplittingException asPartitionKeyRangeIsSplittingException() {
         assert status == null;
         PartitionKeyRangeIsSplittingException dce = new PartitionKeyRangeIsSplittingException();
-        dce.getResponseHeaders().putAll(headerEntries.stream().collect(Collectors.toMap(i -> i.getKey(), i -> i.getValue())));
+        ExceptionBuilder.Merge(dce.getResponseHeaders(), headerEntries);
         return dce;
     }
 
     public PartitionIsMigratingException asPartitionIsMigratingException() {
         assert status == null;
         PartitionIsMigratingException dce = new PartitionIsMigratingException();
-        dce.getResponseHeaders().putAll(headerEntries.stream().collect(Collectors.toMap(i -> i.getKey(), i -> i.getValue())));
+        ExceptionBuilder.Merge(dce.getResponseHeaders(), headerEntries);
         return dce;
+    }
+
+    private static void Merge(HttpHeaders headers,
+                               List<Map.Entry<String, String>> headersToMerge) {
+        headersToMerge.forEach((entry) -> headers.put(entry.getKey(), entry.getValue()) );
     }
 }
