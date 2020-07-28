@@ -4,6 +4,7 @@ package com.azure.storage.file.datalake;
 
 import com.azure.core.util.Configuration;
 import com.azure.storage.file.datalake.implementation.models.StorageErrorException;
+import com.azure.storage.file.datalake.models.DataLakeStorageException;
 import com.azure.storage.file.datalake.models.PathProperties;
 
 import java.util.UUID;
@@ -26,12 +27,14 @@ public class DirectoryExample {
      */
     public static void main(String[] args) {
         String fileSystemName = generateRandomName();
-        DataLakeFileSystemClient dataLakeFileSystemClient = new DataLakeFileSystemClientBuilder().endpoint(ENDPOINT).fileSystemName(fileSystemName).buildClient();
+        String sasToken="${SASToken}";
+        DataLakeFileSystemClient dataLakeFileSystemClient = new DataLakeFileSystemClientBuilder().endpoint(ENDPOINT).fileSystemName(fileSystemName).sasToken(sasToken).buildClient();
         dataLakeFileSystemClient.create();
         // Build up a directory client
         DataLakeDirectoryClient directoryClient = new DataLakePathClientBuilder().endpoint(ENDPOINT)
             .pathName(generateRandomName())
             .fileSystemName(fileSystemName)
+            .sasToken(sasToken)
             .buildDirectoryClient();
 
         // Create a parent directory
@@ -61,7 +64,7 @@ public class DirectoryExample {
         // Delete the child directory. The operation will fail because storage service only allowed to delete the empty directory.
         try {
             childDirClient.delete();
-        } catch (StorageErrorException e) {
+        } catch (DataLakeStorageException e) {
             System.out.println("This is expected as the child directory is not empty.");
         }
 
