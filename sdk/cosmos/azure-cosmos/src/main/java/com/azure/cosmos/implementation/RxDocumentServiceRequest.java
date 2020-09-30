@@ -29,6 +29,7 @@ public class RxDocumentServiceRequest implements Cloneable {
     public volatile boolean forcePartitionKeyRangeRefresh;
     public volatile boolean forceCollectionRoutingMapRefresh;
     private String resourceId;
+    private RequestVerb requestVerb;
     private final ResourceType resourceType;
     private final Map<String, String> headers;
     private volatile String continuation;
@@ -205,9 +206,9 @@ public class RxDocumentServiceRequest implements Cloneable {
     /**
      * Creates a DocumentServiceRequest
      *
-     * @param resourceId        the resource Id.
+     * @param operationType     the operation type.
      * @param resourceType      the resource type.
-     * @param byteBuffer           the byte content observable\
+     * @param byteBuffer        the byte content observable\
      * @param headers           the request headers.
      */
     private RxDocumentServiceRequest(OperationType operationType,
@@ -228,7 +229,7 @@ public class RxDocumentServiceRequest implements Cloneable {
     /**
      * Creates a DocumentServiceRequest
      *
-     * @param resourceId        the resource Id.
+     * @param operationType     the operation type.
      * @param resourceType      the resource type.
      * @param content           the byte content observable\
      * @param headers           the request headers.
@@ -926,6 +927,22 @@ public class RxDocumentServiceRequest implements Cloneable {
         } else {
             return PathsHelper.validateResourceId(resourceTypeToValidate, this.resourceId);
         }
+    }
+
+    /**
+     * Sets the request verb for the current request instance.
+     */
+    public void setRequestVerb(RequestVerb verb) {
+        this.requestVerb = verb;
+    }
+
+    /**
+     * Gets the request verb for the current request instance if one was setup.
+     *
+     * @return the request verb.
+     */
+    public RequestVerb getRequestVerb() {
+        return this.requestVerb;
     }
 
     public static RxDocumentServiceRequest createFromResource(RxDocumentServiceRequest request, Resource modifiedResource) {
