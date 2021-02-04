@@ -3,6 +3,7 @@
 
 package com.azure.core.util;
 
+import com.azure.core.http.policy.AzureTelemetryPolicy;
 import com.azure.core.http.policy.HttpLogOptions;
 import com.azure.core.http.rest.PagedResponse;
 import com.azure.core.util.logging.ClientLogger;
@@ -258,6 +259,76 @@ public final class CoreUtils {
             } else {
                 return new String(bytes, StandardCharsets.UTF_8);
             }
+        }
+    }
+
+    /**
+     * Creates a properly formatted telemetry string from the passed raw telemetry data.
+     *
+     * @param className Name of the client class.
+     * @param methodName Name of the client method.
+     * @param isAsync Flag determining whether the method is asynchronous.
+     * @param additionalTelemetryData Array of key-value pairs. If {@code additionalTelemetryData.length % 2 == 1} the
+     * last key will use null as its value.
+     * @return A formatted telemetry string.
+     */
+    public static String createTelemetryValue(String className, String methodName, boolean isAsync,
+        String... additionalTelemetryData) {
+        // Telemetry capturing is disabled, no-op.
+        if (Configuration.getGlobalConfiguration().get(Configuration.PROPERTY_AZURE_TELEMETRY_DISABLED, false)) {
+            return "";
+        }
+
+        StringBuilder telemetry = new StringBuilder("class=")
+            .append(className)
+            .append(";method=")
+            .append(methodName)
+            .append(";isAsync=")
+            .append(isAsync);
+
+        if (!CoreUtils.isNullOrEmpty(additionalTelemetryData)) {
+            for (int i = 0; i < additionalTelemetryData.length; i += 2) {
+                String key = additionalTelemetryData[i];
+                String value = (i + 1 == additionalTelemetryData.length) ? "null" : additionalTelemetryData[i + 1];
+
+                if (i > 0) {
+                    telemetry.append(";");
+                }
+
+                telemetry.append(key).append("=").append(value);
+            }
+        }
+
+        return telemetry.toString();
+    }
+
+    /**
+     * Adds a telemetry value into the current context.
+     * <p>
+     * If {@code telemetryValue} is null or empty the current context will be returned unmodified.
+     * <p>
+     * If {@code context} is null {@link Context#NONE} will be used as the current context.
+     *
+     * @param context Current context.
+     * @param telemetryValue Telemetry value.
+     * @return An updated context with the new telemetry value added.
+     */
+    public static Context addTelemetryValue(Context context, String telemetryValue) {
+        if (CoreUtils.isNullOrEmpty(telemetryValue)) {
+            return context;
+        }
+
+        if (context == null) {
+            return Context.NONE.addData(AzureTelemetryPolicy.CONTEXT_TELEMETRY_KEY, telemetryValue);
+        } else {
+            String previousTelemetryValue = (String) context.getData(AzureTelemetryPolicy.CONTEXT_TELEMETRY_KEY)
+                .orElse(null);
+
+            String newTelemetryValue = CoreUtils.isNullOrEmpty(previousTelemetryValue)
+                ? telemetryValue
+                : previousTelemetryValue + ";" + telemetryValue;
+
+            return context.addData(AzureTelemetryPolicy.CONTEXT_TELEMETRY_KEY, newTelemetryValue);
         }
     }
 

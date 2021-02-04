@@ -22,7 +22,6 @@ import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -166,7 +165,7 @@ public final class FluxUtil {
      * @return The response from service call
      */
     public static <T> Mono<T> withContext(Function<Context, Mono<T>> serviceCall) {
-        return withContext(serviceCall, Collections.emptyMap());
+        return withContextInternal(serviceCall, Function.identity(), Function.identity());
     }
 
     /**
@@ -185,22 +184,30 @@ public final class FluxUtil {
      */
     public static <T> Mono<T> withContext(Function<Context, Mono<T>> serviceCall,
         Map<String, String> contextAttributes) {
+        return withContextInternal(serviceCall, context -> {
+            if (!CoreUtils.isNullOrEmpty(contextAttributes)) {
+                for (Map.Entry<String, String> kvp : contextAttributes.entrySet()) {
+                    context = context.addData(kvp.getKey(), kvp.getValue());
+                }
+            }
+
+            return context;
+        }, Function.identity());
+    }
+
+    private static <T> Mono<T> withContextInternal(Function<Context, Mono<T>> serviceCall,
+        Function<Context, Context> preConversionModifier, Function<Context, Context> postConversionModifier) {
         return Mono.subscriberContext()
             .map(context -> {
-                final Context[] azureContext = new Context[] { Context.NONE };
-
-                if (!CoreUtils.isNullOrEmpty(contextAttributes)) {
-                    contextAttributes.forEach((key, value) -> azureContext[0] = azureContext[0].addData(key, value));
-                }
+                final Context[] azureContext = new Context[] { preConversionModifier.apply(Context.NONE) };
 
                 if (!context.isEmpty()) {
                     context.stream().forEach(entry ->
                         azureContext[0] = azureContext[0].addData(entry.getKey(), entry.getValue()));
                 }
 
-                return azureContext[0];
-            })
-            .flatMap(serviceCall);
+                return postConversionModifier.apply(azureContext[0]);
+            }).flatMap(serviceCall);
     }
 
     /**
