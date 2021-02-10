@@ -99,6 +99,7 @@ public class BarrierRequestHelper {
 
 
             case ResourceToken:
+            case SasToken:
                 authorizationToken = request.getHeaders().get(HttpConstants.HttpHeaders.AUTHORIZATION);
                 break;
 
