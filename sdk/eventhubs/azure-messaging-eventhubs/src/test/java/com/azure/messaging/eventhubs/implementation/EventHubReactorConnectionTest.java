@@ -6,13 +6,7 @@ package com.azure.messaging.eventhubs.implementation;
 import com.azure.core.amqp.AmqpRetryOptions;
 import com.azure.core.amqp.AmqpTransportType;
 import com.azure.core.amqp.ProxyOptions;
-import com.azure.core.amqp.implementation.CbsAuthorizationType;
-import com.azure.core.amqp.implementation.ConnectionOptions;
-import com.azure.core.amqp.implementation.MessageSerializer;
-import com.azure.core.amqp.implementation.ReactorDispatcher;
-import com.azure.core.amqp.implementation.ReactorHandlerProvider;
-import com.azure.core.amqp.implementation.ReactorProvider;
-import com.azure.core.amqp.implementation.TokenManagerProvider;
+import com.azure.core.amqp.implementation.*;
 import com.azure.core.amqp.implementation.handler.ConnectionHandler;
 import com.azure.core.amqp.implementation.handler.ReceiveLinkHandler;
 import com.azure.core.amqp.implementation.handler.SendLinkHandler;
@@ -20,6 +14,8 @@ import com.azure.core.amqp.implementation.handler.SessionHandler;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.util.ClientOptions;
 import com.azure.core.util.CoreUtils;
+import com.azure.messaging.eventhubs.models.EventPosition;
+import com.azure.messaging.eventhubs.models.ReceiveOptions;
 import org.apache.qpid.proton.engine.Connection;
 import org.apache.qpid.proton.engine.Receiver;
 import org.apache.qpid.proton.engine.Record;
@@ -159,6 +155,24 @@ public class EventHubReactorConnectionTest {
         StepVerifier.create(connection.getManagementNode())
             .assertNext(node -> Assertions.assertTrue(node instanceof ManagementChannel))
             .verifyComplete();
+
+    }
+
+    @Test
+    public void createSendLinkTest() {
+        final EventHubReactorAmqpConnection connection = new EventHubReactorAmqpConnection(CONNECTION_ID,
+            connectionOptions, "event-hub-name", reactorProvider, handlerProvider, tokenManagerProvider,
+            messageSerializer, product, clientVersion);
+        Assertions.assertNotNull(connection.createSendLink("send-name", "test-entity-path", new AmqpRetryOptions()));
+    }
+
+    @Test
+    public void createReceiveLinkTest() {
+        final EventHubReactorAmqpConnection connection = new EventHubReactorAmqpConnection(CONNECTION_ID,
+            connectionOptions, "event-hub-name",
+            reactorProvider, handlerProvider, tokenManagerProvider,
+            messageSerializer, product, clientVersion);
+        Assertions.assertNotNull(connection.createReceiveLink("receiver-name", "test-entity-path", EventPosition.latest(), new ReceiveOptions()));
     }
 
     @AfterEach

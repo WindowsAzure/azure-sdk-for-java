@@ -286,6 +286,29 @@ class EventHubConnectionProcessorTest {
             () -> eventHubConnectionProcessor.onError(null));
     }
 
+    @Test
+    public void getFullyQualifiedNamespaceTest() {
+        String testFullyQualifiedNamespace = eventHubConnectionProcessor.getFullyQualifiedNamespace();
+        Assertions.assertEquals("test-namespace.eventhubs.com", testFullyQualifiedNamespace);
+    }
+
+    @Test
+    public void getEventHubNameTest() {
+        String testEventHubName = eventHubConnectionProcessor.getEventHubName();
+        Assertions.assertEquals("test-event-hub-name", testEventHubName);
+    }
+
+    @Test
+    public void getRetryOptionsTest() {
+        AmqpRetryOptions testRetryOption = eventHubConnectionProcessor.getRetryOptions();
+
+        Assertions.assertEquals(AMQP_RETRY_OPTIONS.getTryTimeout(), testRetryOption.getTryTimeout());
+        Assertions.assertEquals(AMQP_RETRY_OPTIONS.getDelay(), testRetryOption.getDelay());
+        Assertions.assertEquals(AMQP_RETRY_OPTIONS.getMaxRetries(), testRetryOption.getMaxRetries());
+        Assertions.assertEquals(AMQP_RETRY_OPTIONS.getMaxDelay(), testRetryOption.getMaxDelay());
+        Assertions.assertEquals(AMQP_RETRY_OPTIONS.getMode(), testRetryOption.getMode());
+    }
+
     private static Flux<EventHubAmqpConnection> createSink(EventHubAmqpConnection[] connections) {
         return Flux.create(emitter -> {
             final AtomicInteger counter = new AtomicInteger();
