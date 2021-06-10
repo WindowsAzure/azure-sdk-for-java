@@ -27,13 +27,8 @@ import org.junit.jupiter.params.provider.MethodSource;
  * live. By default, tests are run in playback mode. The runAllClientFunctions and runAllClientFunctionsWithResponse
  * test will not run in LIVE or RECORD as they cannot get their own conversationId.
  */
-<<<<<<< HEAD:sdk/communication/azure-communication-callingserver/src/test/java/com/azure/communication/callingserver/ConversationClientTests.java
-public class ConversationClientTests extends CallingServerTestBase {
-    private String serverCallId = "aHR0cHM6Ly9jb252LXVzd2UtMDUuY29udi5za3lwZS5jb206NDQzL2NvbnYvOTVPcHpfdFhlMEswSXkzcmhKQndUdz9pPTY2JmU9NjM3NTg3ODcxMjUxODc0MTIz";
-=======
 public class ServerCallTests extends CallingServerTestBase {
-    private String serverCallId = "aHR0cHM6Ly9jb252LXVzZWEtMDcuY29udi5za3lwZS5jb20vY29udi85M0FnUnVMbGdVdUU2MWdxa1pnaHVBP2k9NTEmZT02Mzc1NzY1NzUwOTIzMTQ3OTU";
->>>>>>> c5bc2f8182ab8bb536573a181abb7d1ca79a9742:sdk/communication/azure-communication-callingserver/src/test/java/com/azure/communication/callingserver/ServerCallTests.java
+    private String serverCallId = "aHR0cHM6Ly9jb252LXVzd2UtMDguY29udi5za3lwZS5jb20vY29udi8tby1FWjVpMHJrS3RFTDBNd0FST1J3P2k9ODgmZT02Mzc1Nzc0MTY4MDc4MjQyOTM";
 
     @ParameterizedTest
     @MethodSource("com.azure.core.test.TestBase#getHttpClients")
