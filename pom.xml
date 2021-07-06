@@ -81,6 +81,9 @@
         <!-- Mixed Reality -->
         <module>sdk/mixedreality/azure-mixedreality-authentication</module>
 
+        <!-- DigitalTwins Model Parser -->
+        <module>sdk/modelparser/azure-digitaltwins-parser</module>
+
         <!-- Models Repository -->
         <module>sdk/modelsrepository/azure-iot-modelsrepository</module>
 
@@ -260,6 +263,10 @@
                   <group>
                     <title>Azure Digital Twins</title>
                     <packages>com.azure.digitaltwins.core*</packages>
+                  </group>
+                  <group>
+                    <title>Azure Digital Twins Model Parser</title>
+                    <packages>com.azure.digitaltwins.parser*</packages>
                   </group>
                   <group>
                     <title>Azure Document Translator</title>
@@ -779,6 +786,7 @@
         <module>sdk/mediaservices</module>
         <module>sdk/metricsadvisor</module>
         <module>sdk/mixedreality</module>
+        <module>sdk/modelparser</module>
         <module>sdk/modelsrepository</module>
         <module>sdk/monitor</module>
         <module>sdk/mysql</module>
