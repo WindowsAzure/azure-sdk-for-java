@@ -25,7 +25,6 @@ import com.azure.cosmos.implementation.feedranges.FeedRangeEpkImpl;
 import com.azure.cosmos.implementation.feedranges.FeedRangeInternal;
 import com.azure.cosmos.implementation.query.QueryInfo;
 import com.azure.cosmos.implementation.routing.Range;
-import com.azure.cosmos.implementation.throughputControl.config.ThroughputControlGroupFactory;
 import com.azure.cosmos.implementation.throughputControl.config.GlobalThroughputControlGroup;
 import com.azure.cosmos.implementation.throughputControl.config.LocalThroughputControlGroup;
 import com.azure.cosmos.models.CosmosChangeFeedRequestOptions;
@@ -718,7 +717,6 @@ public class CosmosAsyncContainer {
      * Use {@link TransactionalBatchResponse#isSuccessStatusCode} on the response returned to ensure that the
      * transactional batch succeeded.
      */
-    @Beta(value = Beta.SinceVersion.V4_7_0, warningText = Beta.PREVIEW_SUBJECT_TO_CHANGE_WARNING)
     public Mono<TransactionalBatchResponse> executeTransactionalBatch(TransactionalBatch transactionalBatch) {
         return executeTransactionalBatch(transactionalBatch, new TransactionalBatchRequestOptions());
     }
@@ -753,7 +751,6 @@ public class CosmosAsyncContainer {
      * Use {@link TransactionalBatchResponse#isSuccessStatusCode} on the response returned to ensure that the
      * transactional batch succeeded.
      */
-    @Beta(value = Beta.SinceVersion.V4_7_0, warningText = Beta.PREVIEW_SUBJECT_TO_CHANGE_WARNING)
     public Mono<TransactionalBatchResponse> executeTransactionalBatch(
         TransactionalBatch transactionalBatch,
         TransactionalBatchRequestOptions requestOptions) {
@@ -1045,7 +1042,6 @@ public class CosmosAsyncContainer {
      *
      * @return an {@link Mono} containing the Cosmos item resource response with the patched item or an error.
      */
-    @Beta(value = Beta.SinceVersion.V4_11_0, warningText = Beta.PREVIEW_SUBJECT_TO_CHANGE_WARNING)
     public <T> Mono<CosmosItemResponse<T>> patchItem(
         String itemId,
         PartitionKey partitionKey,
@@ -1070,7 +1066,6 @@ public class CosmosAsyncContainer {
      *
      * @return an {@link Mono} containing the Cosmos item resource response with the patched item or an error.
      */
-    @Beta(value = Beta.SinceVersion.V4_11_0, warningText = Beta.PREVIEW_SUBJECT_TO_CHANGE_WARNING)
     public <T> Mono<CosmosItemResponse<T>> patchItem(
         String itemId,
         PartitionKey partitionKey,
