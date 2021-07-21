@@ -3,6 +3,13 @@
 
 package com.azure.core.util;
 
+import com.azure.core.util.implementation.BinaryDataContent;
+import com.azure.core.util.implementation.ByteArrayContent;
+import com.azure.core.util.implementation.FileContent;
+import com.azure.core.util.implementation.FluxByteBufferContent;
+import com.azure.core.util.implementation.InputStreamContent;
+import com.azure.core.util.implementation.SerializableContent;
+import com.azure.core.util.implementation.StringContent;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.core.util.serializer.JsonSerializer;
 import com.azure.core.util.serializer.JsonSerializerProvider;
@@ -12,21 +19,43 @@ import com.azure.core.util.serializer.TypeReference;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ReadOnlyBufferException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
- * This class is an abstraction for the many ways binary data can be represented.
+ *
+ * BinaryData is a convenient data interchange class for use throughout the Azure SDK for Java. Put simply, BinaryData
+ * enables developers to bring data in from external sources, and read it back from Azure services, in formats that
+ * appeal to them. This leaves BinaryData, and the Azure SDK for Java, the task of converting this data into appropriate
+ * formats to be transferred to and from these external services. This enables developers to focus on their business
+ * logic, and enables the Azure SDK for Java to optimize operations for best performance.
  * <p>
+ * BinaryData in its simplest form can be thought of as a container for content. Often this content is already in-memory
+ * as a String, byte array, or an Object that can be serialized into a String or byte[] (for example, if the Object has
+ * appropriate annotations for a library such as Jackson). When the BinaryData is about to be sent to an Azure Service,
+ * this in-memory content is copied into the network request and sent to the service.
+ * </p>
+ * <p>
+ * In more performance critical scenarios, where copying data into memory results in increased memory pressure, it is
+ * possible to create a BinaryData instance from a stream of data. From this, BinaryData can be connected directly to
+ * the outgoing network connection so that the stream is read directly to the network, without needing to first be read
+ * into memory on the system. Similarly, it is possible to read a stream of data from a BinaryData returned from an
+ * Azure Service without it first being read into memory. In many situations, these streaming operations can drastically
+ * reduce the memory pressure in applications, and so it is encouraged that all developers very carefully consider their
+ * ability to use the most appropriate API in BinaryData whenever they encounter an client library that makes use of
+ * BinaryData.
+ * </p>
+ * <p>
+ * Refer to the documentation of each method in the BinaryData class to better understand its performance
+ * characteristics, and refer to the samples below to understand the common usage scenarios of this class.
+ * </p>
+ *
  * {@link BinaryData} can be created from an {@link InputStream}, a {@link Flux} of {@link ByteBuffer}, a {@link
  * String}, an {@link Object}, or a byte array.
  *
@@ -57,23 +86,12 @@ import java.util.Objects;
  */
 public final class BinaryData {
     private static final ClientLogger LOGGER = new ClientLogger(BinaryData.class);
-    private static final BinaryData EMPTY_DATA = new BinaryData(new byte[0]);
-    private static final int STREAM_READ_SIZE = 1024;
+    private static final int CHUNK_SIZE = 8092;
+    static final JsonSerializer SERIALIZER = JsonSerializerProviders.createInstance(true);
+    private final BinaryDataContent content;
 
-    private static final JsonSerializer SERIALIZER = JsonSerializerProviders.createInstance(true);
-
-    private final byte[] data;
-
-    private String dataAsStringCache;
-
-
-    /**
-     * Create an instance of {@link BinaryData} from the given byte array.
-     *
-     * @param data The byte array that {@link BinaryData} will represent.
-     */
-    BinaryData(byte[] data) {
-        this.data = data;
+    BinaryData(BinaryDataContent content) {
+        this.content = Objects.requireNonNull(content, "'content' cannot be null.");
     }
 
     /**
@@ -92,23 +110,7 @@ public final class BinaryData {
      * @throws UncheckedIOException If any error happens while reading the {@link InputStream}.
      */
     public static BinaryData fromStream(InputStream inputStream) {
-        if (Objects.isNull(inputStream)) {
-            return EMPTY_DATA;
-        }
-
-        try {
-            ByteArrayOutputStream dataOutputBuffer = new ByteArrayOutputStream();
-            int nRead;
-            byte[] data = new byte[STREAM_READ_SIZE];
-            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
-                dataOutputBuffer.write(data, 0, nRead);
-            }
-
-            return new BinaryData(dataOutputBuffer.toByteArray());
-
-        } catch (IOException ex) {
-            throw LOGGER.logExceptionAsError(new UncheckedIOException(ex));
-        }
+        return new BinaryData(new InputStreamContent(inputStream));
     }
 
     /**
@@ -133,10 +135,6 @@ public final class BinaryData {
     /**
      * Creates an instance of {@link BinaryData} from the given {@link Flux} of {@link ByteBuffer}.
      * <p>
-     * If the {@code data} is null an empty {@link BinaryData} will be returned.
-     * <p>
-     * <b>Note:</b> This will collect all bytes from the {@link ByteBuffer ByteBuffers} resulting in {@link
-     * ByteBuffer#hasRemaining() hasRemaining} to return false.
      *
      * <p><strong>Create an instance from a Flux of ByteBuffer</strong></p>
      *
@@ -146,12 +144,29 @@ public final class BinaryData {
      * @return A {@link Mono} of {@link BinaryData} representing the {@link Flux} of {@link ByteBuffer}.
      */
     public static Mono<BinaryData> fromFlux(Flux<ByteBuffer> data) {
-        if (Objects.isNull(data)) {
-            return Mono.just(EMPTY_DATA);
-        }
+        Objects.requireNonNull(data, "'content' cannot be null.");
+        return Mono.just(new BinaryData(new FluxByteBufferContent(data)));
+    }
 
-        return FluxUtil.collectBytesInByteBufferStream(data)
-            .flatMap(bytes -> Mono.just(new BinaryData(bytes)));
+    /**
+     * Creates an instance of {@link BinaryData} from the given {@link Flux} of {@link ByteBuffer}.
+     *
+     * <p><strong>Create an instance from a Flux of ByteBuffer</strong></p>
+     *
+     * {@codesnippet com.azure.core.util.BinaryData.fromFlux#Flux}
+     *
+     * @param data The {@link Flux} of {@link ByteBuffer} that {@link BinaryData} will represent.
+     * @param length The length of {@code data} in bytes.
+     * @return A {@link Mono} of {@link BinaryData} representing the {@link Flux} of {@link ByteBuffer}.
+     * @throws IllegalArgumentException if the length is less than zero.
+     * @throws NullPointerException if {@code data} is null.
+     */
+    public static Mono<BinaryData> fromFlux(Flux<ByteBuffer> data, Long length) {
+        Objects.requireNonNull(data, "'content' cannot be null.");
+        if (length < 0) {
+            throw LOGGER.logExceptionAsError(new IllegalArgumentException("'length' cannot be less than 0."));
+        }
+        return Mono.just(new BinaryData(new FluxByteBufferContent(data, length)));
     }
 
     /**
@@ -170,17 +185,16 @@ public final class BinaryData {
      * @return A {@link BinaryData} representing the {@link String}.
      */
     public static BinaryData fromString(String data) {
-        if (CoreUtils.isNullOrEmpty(data)) {
-            return EMPTY_DATA;
-        }
-
-        return new BinaryData(data.getBytes(StandardCharsets.UTF_8));
+        return new BinaryData(new StringContent(data));
     }
 
     /**
      * Creates an instance of {@link BinaryData} from the given byte array.
      * <p>
-     * If the byte array is null or zero length an empty {@link BinaryData} will be returned.
+     * If the byte array is null or zero length an empty {@link BinaryData} will be returned. Note that the input
+     * byte array is used as a reference by this instance of {@link BinaryData} and any changes to the byte array
+     * outside of this instance will result in the contents of this BinaryData instance to be updated as well. To
+     * safely update the byte array, it is recommended to make a copy of the contents first.
      *
      * <p><strong>Create an instance from a byte array</strong></p>
      *
@@ -190,11 +204,7 @@ public final class BinaryData {
      * @return A {@link BinaryData} representing the byte array.
      */
     public static BinaryData fromBytes(byte[] data) {
-        if (Objects.isNull(data) || data.length == 0) {
-            return EMPTY_DATA;
-        }
-
-        return new BinaryData(Arrays.copyOf(data, data.length));
+        return new BinaryData(new ByteArrayContent(data));
     }
 
     /**
@@ -267,13 +277,7 @@ public final class BinaryData {
      * @see <a href="https://aka.ms/azsdk/java/docs/serialization" target="_blank">More about serialization</a>
      */
     public static BinaryData fromObject(Object data, ObjectSerializer serializer) {
-        if (Objects.isNull(data)) {
-            return EMPTY_DATA;
-        }
-
-        Objects.requireNonNull(serializer, "'serializer' cannot be null.");
-
-        return new BinaryData(serializer.serializeToBytes(data));
+        return new BinaryData(new SerializableContent(data, serializer));
     }
 
     /**
@@ -308,12 +312,44 @@ public final class BinaryData {
     }
 
     /**
-     * Returns a byte array representation of this {@link BinaryData}.
+     * Creates a {@link BinaryData} that uses {@link Path} as its data.
+     *
+     * @param file The {@link Path} that will be the {@link BinaryData} data.
+     * @return A new {@link BinaryData}.
+     * @throws NullPointerException If {@code file} is null.
+     */
+    public static BinaryData fromFile(Path file) {
+        return fromFile(file, CHUNK_SIZE);
+    }
+
+    /**
+     * Creates a {@link BinaryData} that uses {@link Path} as its data.
+     *
+     * @param file The {@link Path} that will be the {@link BinaryData} data.
+     * @param chunkSize The requested size for each read of the path.
+     * @return A new {@link BinaryData}.
+     * @throws NullPointerException If {@code file} is null.
+     * @throws IllegalArgumentException If {@code offset} or {@code length} are negative or {@code offset} plus {@code
+     * length} is greater than the file size or {@code chunkSize} is less than or equal to 0.
+     */
+    public static BinaryData fromFile(Path file, int chunkSize) {
+        Objects.requireNonNull(file, "'file' cannot be null.");
+        if (chunkSize <= 0) {
+            throw LOGGER.logExceptionAsError(new IllegalArgumentException(
+                    "'chunkSize' cannot be less than or equal to 0."));
+        }
+        return new BinaryData(new FileContent(file, chunkSize));
+    }
+
+    /**
+     * Returns a byte array representation of this {@link BinaryData}. This method returns a reference to the
+     * underlying byte array. Modifying the contents of the returned byte array will also change the content of this
+     * BinaryData instance. To safely update the byte array, it is recommended to make a copy of the contents first.
      *
      * @return A byte array representing this {@link BinaryData}.
      */
     public byte[] toBytes() {
-        return Arrays.copyOf(this.data, this.data.length);
+        return content.toBytes();
     }
 
     /**
@@ -323,11 +359,7 @@ public final class BinaryData {
      * @return A {@link String} representing this {@link BinaryData}.
      */
     public String toString() {
-        if (this.dataAsStringCache == null) {
-            this.dataAsStringCache = new String(this.data, StandardCharsets.UTF_8);
-        }
-
-        return this.dataAsStringCache;
+        return content.toString();
     }
 
     /**
@@ -344,8 +376,8 @@ public final class BinaryData {
      *
      * {@codesnippet com.azure.core.util.BinaryData.toObject#Class}
      *
-     * @param clazz The {@link Class} representing the Object's type.
      * @param <T> Type of the deserialized Object.
+     * @param clazz The {@link Class} representing the Object's type.
      * @return An {@link Object} representing the JSON deserialized {@link BinaryData}.
      * @throws NullPointerException If {@code clazz} is null.
      * @see JsonSerializer
@@ -454,7 +486,7 @@ public final class BinaryData {
         Objects.requireNonNull(typeReference, "'typeReference' cannot be null.");
         Objects.requireNonNull(serializer, "'serializer' cannot be null.");
 
-        return serializer.deserializeFromBytes(this.data, typeReference);
+        return content.toObject(typeReference, serializer);
     }
 
     /**
@@ -591,7 +623,7 @@ public final class BinaryData {
      * @return An {@link InputStream} representing the {@link BinaryData}.
      */
     public InputStream toStream() {
-        return new ByteArrayInputStream(this.data);
+        return content.toStream();
     }
 
     /**
@@ -606,6 +638,24 @@ public final class BinaryData {
      * @return A read-only {@link ByteBuffer} representing the {@link BinaryData}.
      */
     public ByteBuffer toByteBuffer() {
-        return ByteBuffer.wrap(this.data).asReadOnlyBuffer();
+        return content.toByteBuffer();
+    }
+
+    /**
+     * Returns the content of this {@link BinaryData} instance as a flux of {@link ByteBuffer ByteBuffers}.
+     *
+     * @return the content of this {@link BinaryData} instance as a flux of {@link ByteBuffer ByteBuffers}.
+     */
+    public Flux<ByteBuffer> toFluxByteBuffer() {
+        return content.toFluxByteBuffer();
+    }
+
+    /**
+     * Returns the length of the content, if it is known. The length can be {@code null} if the source did not
+     * specify the length or the length cannot be determined without reading the whole content.
+     * @return the length of the content, if it is known.
+     */
+    public Long getLength() {
+        return content.getLength();
     }
 }
