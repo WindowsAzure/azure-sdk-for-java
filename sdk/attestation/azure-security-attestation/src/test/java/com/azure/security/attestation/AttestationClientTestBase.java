@@ -13,6 +13,7 @@ import com.azure.core.test.TestMode;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.identity.EnvironmentCredentialBuilder;
+import com.azure.security.attestation.models.AttestationSigner;
 import com.azure.security.attestation.models.AttestationType;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSSigner;
@@ -30,10 +31,6 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -112,6 +109,16 @@ public class AttestationClientTestBase extends TestBase {
     }
 
     /**
+     * Retrieve an attestationClientBuilder for the specified HTTP client and client URI
+     * @param httpClient - HTTP client ot be used for the attestation client.
+     * @param clientUri - Client base URI to access the service.
+     * @return Returns an attestation client builder corresponding to the httpClient and clientUri.
+     */
+    AttestationAsyncClientBuilder getAsyncBuilder(HttpClient httpClient, String clientUri) {
+        return new AttestationAsyncClientBuilder().pipeline(getHttpPipeline(httpClient)).endpoint(clientUri);
+    }
+
+    /**
      * Retrieves an HTTP pipeline configured on the specified HTTP pipeline.
      *
      * Used by getBuilder().
@@ -158,8 +165,8 @@ public class AttestationClientTestBase extends TestBase {
 
         SignedJWT finalToken = token;
         return getSigningCertificateByKeyId(token, httpClient, clientUri)
-            .handle((cert, sink) -> {
-                final PublicKey key = cert.getPublicKey();
+            .handle((signer, sink) -> {
+                final PublicKey key = signer.getCertificates()[0].getPublicKey();
                 final RSAPublicKey rsaKey = (RSAPublicKey) key;
 
                 final RSASSAVerifier verifier = new RSASSAVerifier(rsaKey);
@@ -218,33 +225,17 @@ public class AttestationClientTestBase extends TestBase {
      * @param clientUri - Base URI for the attestation client.
      * @return X509Certificate which will have been used to sign the token.
      */
-    Mono<X509Certificate> getSigningCertificateByKeyId(SignedJWT token, HttpClient client, String clientUri) {
-        AttestationClientBuilder builder = getBuilder(client, clientUri);
-        return builder.buildSigningCertificatesAsyncClient().get()
-            .handle((keySet, sink) -> {
-                final CertificateFactory cf;
-                try {
-                    cf = CertificateFactory.getInstance("X.509");
-                } catch (CertificateException e) {
-                    sink.error(logger.logThrowableAsError(e));
-                    return;
-                }
-
+    Mono<AttestationSigner> getSigningCertificateByKeyId(SignedJWT token, HttpClient client, String clientUri) {
+        AttestationAsyncClientBuilder builder = getAsyncBuilder(client, clientUri);
+        return builder.buildAttestationAsyncClient().getAttestationSigners()
+            .handle((signers, sink) -> {
                 final String keyId = token.getHeader().getKeyID();
                 boolean foundKey = false;
-                for (com.azure.security.attestation.models.JsonWebKey key : keySet.getKeys()) {
-                    if (keyId.equals(key.getKid())) {
-                        final Certificate cert;
-                        try {
-                            cert = cf.generateCertificate(base64ToStream(key.getX5C().get(0)));
-                            foundKey = true;
-                        } catch (CertificateException e) {
-                            sink.error(logger.logThrowableAsError(e));
-                            return;
-                        }
 
-                        assertTrue(cert instanceof X509Certificate);
-                        sink.next((X509Certificate) cert);
+                for (AttestationSigner signer : signers) {
+                    if (keyId.equals(signer.getKeyId())) {
+                        foundKey = true;
+                        sink.next(signer);
                     }
                 }
                 if (!foundKey) {

@@ -13,8 +13,8 @@ import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.util.Configuration;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.core.util.serializer.SerializerAdapter;
-import com.azure.security.attestation.implementation.AttestationClientImplBuilder;
 import com.azure.security.attestation.implementation.AttestationClientImpl;
+import com.azure.security.attestation.implementation.AttestationClientImplBuilder;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,35 +23,19 @@ import java.util.Objects;
 /** A builder for creating a new instance of the AttestationClient type. */
 @ServiceClientBuilder(
         serviceClients = {
-            PolicyClient.class,
-            PolicyCertificatesClient.class,
-            AttestationClient.class,
-            SigningCertificatesClient.class,
-            PolicyAsyncClient.class,
-            PolicyCertificatesAsyncClient.class,
+            AttestationAsyncClient.class,
+            SigningCertificatesAsyncClient.class
         })
-public final class AttestationClientBuilder {
-    private static final String SDK_NAME = "name";
-
-    private static final String SDK_VERSION = "version";
-
+public final class AttestationAsyncClientBuilder {
     private final AttestationClientImplBuilder clientImplBuilder;
-    private final AttestationAsyncClientBuilder asyncClientBuilder;
-    private final ClientLogger logger = new ClientLogger(AttestationClientBuilder.class);
+    private final ClientLogger logger = new ClientLogger(AttestationAsyncClientBuilder.class);
 
     /**
      * Creates a new instance of the AttestationClientBuilder class.
      */
-    public AttestationClientBuilder() {
+    public AttestationAsyncClientBuilder() {
         clientImplBuilder = new AttestationClientImplBuilder();
-        asyncClientBuilder = new AttestationAsyncClientBuilder();
     }
-
-    /*
-     * The attestation instance base URI, for example
-     * https://mytenant.attest.azure.net.
-     */
-    private String endpoint;
 
     /**
      * Sets The attestation endpoint URI, for example https://mytenant.attest.azure.net.
@@ -59,15 +43,14 @@ public final class AttestationClientBuilder {
      * @param endpoint The endpoint to connect to.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder endpoint(String endpoint) {
+    public AttestationAsyncClientBuilder endpoint(String endpoint) {
         Objects.requireNonNull(endpoint);
         try {
             new URL(endpoint);
         } catch (MalformedURLException ex) {
-            logger.logExceptionAsError(new IllegalArgumentException(ex));
+            throw logger.logExceptionAsError(new IllegalArgumentException(ex));
         }
         clientImplBuilder.instanceUrl(endpoint);
-        asyncClientBuilder.endpoint(endpoint);
         return this;
     }
 
@@ -77,9 +60,9 @@ public final class AttestationClientBuilder {
      * @param pipeline the pipeline value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder pipeline(HttpPipeline pipeline) {
+    public AttestationAsyncClientBuilder pipeline(HttpPipeline pipeline) {
+        Objects.requireNonNull(pipeline);
         clientImplBuilder.pipeline(pipeline);
-        asyncClientBuilder.pipeline(pipeline);
         return this;
     }
 
@@ -89,9 +72,9 @@ public final class AttestationClientBuilder {
      * @param serializerAdapter the serializerAdapter value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder serializerAdapter(SerializerAdapter serializerAdapter) {
+    public AttestationAsyncClientBuilder serializerAdapter(SerializerAdapter serializerAdapter) {
+        Objects.requireNonNull(serializerAdapter);
         clientImplBuilder.serializerAdapter(serializerAdapter);
-        asyncClientBuilder.serializerAdapter(serializerAdapter);
         return this;
     }
 
@@ -101,9 +84,8 @@ public final class AttestationClientBuilder {
      * @param httpClient the httpClient value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder httpClient(HttpClient httpClient) {
+    public AttestationAsyncClientBuilder httpClient(HttpClient httpClient) {
         clientImplBuilder.httpClient(httpClient);
-        asyncClientBuilder.httpClient(httpClient);
         return this;
     }
 
@@ -113,9 +95,8 @@ public final class AttestationClientBuilder {
      * @param configuration the configuration value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder configuration(Configuration configuration) {
+    public AttestationAsyncClientBuilder configuration(Configuration configuration) {
         clientImplBuilder.configuration(configuration);
-        asyncClientBuilder.configuration(configuration);
         return this;
     }
 
@@ -125,9 +106,8 @@ public final class AttestationClientBuilder {
      * @param httpLogOptions the httpLogOptions value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder httpLogOptions(HttpLogOptions httpLogOptions) {
+    public AttestationAsyncClientBuilder httpLogOptions(HttpLogOptions httpLogOptions) {
         clientImplBuilder.httpLogOptions(httpLogOptions);
-        asyncClientBuilder.httpLogOptions(httpLogOptions);
         return this;
     }
 
@@ -137,37 +117,20 @@ public final class AttestationClientBuilder {
      * @param retryPolicy the retryPolicy value.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder retryPolicy(RetryPolicy retryPolicy) {
+    public AttestationAsyncClientBuilder retryPolicy(RetryPolicy retryPolicy) {
         clientImplBuilder.retryPolicy(retryPolicy);
-        asyncClientBuilder.retryPolicy(retryPolicy);
         return this;
     }
-
     /**
      * Adds a custom Http pipeline policy.
      *
      * @param customPolicy The custom Http pipeline policy to add.
      * @return the AttestationClientBuilder.
      */
-    public AttestationClientBuilder addPolicy(HttpPipelinePolicy customPolicy) {
+    public AttestationAsyncClientBuilder addPolicy(HttpPipelinePolicy customPolicy) {
         clientImplBuilder.addPolicy(customPolicy);
-        asyncClientBuilder.addPolicy(customPolicy);
         return this;
     }
-
-    /**
-     * Builds an instance of AttestationClient sync client.
-     *
-     * @return an instance of AttestationClient.
-     */
-    public AttestationClient buildAttestationClient() {
-        return new AttestationClient(asyncClientBuilder.buildAttestationAsyncClient());
-    }
-
-    /**
-     * Legacy API surface which will be removed shortly.
-     */
-
 
     /**
      * Builds an instance of AttestationClientImpl with the provided parameters.
@@ -179,39 +142,11 @@ public final class AttestationClientBuilder {
     }
 
     /**
-     * Builds an instance of PolicyAsyncClient async client.
+     * Builds an instance of AttestationAsyncClient async client.
      *
-     * @return an instance of PolicyAsyncClient.
+     * @return an instance of AttestationAsyncClient.
      */
-    public PolicyAsyncClient buildPolicyAsyncClient() {
-        return new PolicyAsyncClient(buildInnerClient().getPolicies());
+    public AttestationAsyncClient buildAttestationAsyncClient() {
+        return new AttestationAsyncClient(buildInnerClient());
     }
-
-    /**
-     * Builds an instance of PolicyCertificatesAsyncClient async client.
-     *
-     * @return an instance of PolicyCertificatesAsyncClient.
-     */
-    public PolicyCertificatesAsyncClient buildPolicyCertificatesAsyncClient() {
-        return new PolicyCertificatesAsyncClient(buildInnerClient().getPolicyCertificates());
-    }
-
-    /**
-     * Builds an instance of PolicyClient sync client.
-     *
-     * @return an instance of PolicyClient.
-     */
-    public PolicyClient buildPolicyClient() {
-        return new PolicyClient(buildInnerClient().getPolicies());
-    }
-
-    /**
-     * Builds an instance of PolicyCertificatesClient sync client.
-     *
-     * @return an instance of PolicyCertificatesClient.
-     */
-    public PolicyCertificatesClient buildPolicyCertificatesClient() {
-        return new PolicyCertificatesClient(buildInnerClient().getPolicyCertificates());
-    }
-
 }
