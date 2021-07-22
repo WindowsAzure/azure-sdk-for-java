@@ -5,29 +5,30 @@
 package com.azure.resourcemanager.mysql.fluent.models;
 
 import com.azure.core.annotation.Fluent;
-import com.azure.core.annotation.JsonFlatten;
 import com.azure.core.management.ProxyResource;
 import com.azure.core.util.logging.ClientLogger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** Represents a Query Text. */
-@JsonFlatten
 @Fluent
-public class QueryTextInner extends ProxyResource {
+public final class QueryTextInner extends ProxyResource {
     @JsonIgnore private final ClientLogger logger = new ClientLogger(QueryTextInner.class);
 
     /*
-     * Query identifier unique to the server.
+     * The properties of a query text.
      */
-    @JsonProperty(value = "properties.queryId")
-    private String queryId;
+    @JsonProperty(value = "properties")
+    private QueryTextProperties properties;
 
-    /*
-     * Query text.
+    /**
+     * Get the properties property: The properties of a query text.
+     *
+     * @return the properties value.
      */
-    @JsonProperty(value = "properties.queryText")
-    private String queryText;
+    private QueryTextProperties properties() {
+        return this.properties;
+    }
 
     /**
      * Get the queryId property: Query identifier unique to the server.
@@ -35,7 +36,7 @@ public class QueryTextInner extends ProxyResource {
      * @return the queryId value.
      */
     public String queryId() {
-        return this.queryId;
+        return this.properties() == null ? null : this.properties().queryId();
     }
 
     /**
@@ -45,7 +46,10 @@ public class QueryTextInner extends ProxyResource {
      * @return the QueryTextInner object itself.
      */
     public QueryTextInner withQueryId(String queryId) {
-        this.queryId = queryId;
+        if (this.properties() == null) {
+            this.properties = new QueryTextProperties();
+        }
+        this.properties().withQueryId(queryId);
         return this;
     }
 
@@ -55,7 +59,7 @@ public class QueryTextInner extends ProxyResource {
      * @return the queryText value.
      */
     public String queryText() {
-        return this.queryText;
+        return this.properties() == null ? null : this.properties().queryText();
     }
 
     /**
@@ -65,7 +69,10 @@ public class QueryTextInner extends ProxyResource {
      * @return the QueryTextInner object itself.
      */
     public QueryTextInner withQueryText(String queryText) {
-        this.queryText = queryText;
+        if (this.properties() == null) {
+            this.properties = new QueryTextProperties();
+        }
+        this.properties().withQueryText(queryText);
         return this;
     }
 
@@ -75,5 +82,8 @@ public class QueryTextInner extends ProxyResource {
      * @throws IllegalArgumentException thrown if the instance is not valid.
      */
     public void validate() {
+        if (properties() != null) {
+            properties().validate();
+        }
     }
 }

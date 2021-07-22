@@ -5,22 +5,30 @@
 package com.azure.resourcemanager.mysql.models;
 
 import com.azure.core.annotation.Fluent;
-import com.azure.core.annotation.JsonFlatten;
 import com.azure.core.util.logging.ClientLogger;
+import com.azure.resourcemanager.mysql.fluent.models.ServerUpgradeParametersProperties;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** The ServerUpgradeParameters model. */
-@JsonFlatten
 @Fluent
-public class ServerUpgradeParameters {
+public final class ServerUpgradeParameters {
     @JsonIgnore private final ClientLogger logger = new ClientLogger(ServerUpgradeParameters.class);
 
     /*
-     * Represents an server storage profile.
+     * The properties that can be updated for a server.
      */
-    @JsonProperty(value = "properties.targetServerVersion")
-    private String targetServerVersion;
+    @JsonProperty(value = "properties")
+    private ServerUpgradeParametersProperties properties;
+
+    /**
+     * Get the properties property: The properties that can be updated for a server.
+     *
+     * @return the properties value.
+     */
+    private ServerUpgradeParametersProperties properties() {
+        return this.properties;
+    }
 
     /**
      * Get the targetServerVersion property: Represents an server storage profile.
@@ -28,7 +36,7 @@ public class ServerUpgradeParameters {
      * @return the targetServerVersion value.
      */
     public String targetServerVersion() {
-        return this.targetServerVersion;
+        return this.properties() == null ? null : this.properties().targetServerVersion();
     }
 
     /**
@@ -38,7 +46,10 @@ public class ServerUpgradeParameters {
      * @return the ServerUpgradeParameters object itself.
      */
     public ServerUpgradeParameters withTargetServerVersion(String targetServerVersion) {
-        this.targetServerVersion = targetServerVersion;
+        if (this.properties() == null) {
+            this.properties = new ServerUpgradeParametersProperties();
+        }
+        this.properties().withTargetServerVersion(targetServerVersion);
         return this;
     }
 
@@ -48,5 +59,8 @@ public class ServerUpgradeParameters {
      * @throws IllegalArgumentException thrown if the instance is not valid.
      */
     public void validate() {
+        if (properties() != null) {
+            properties().validate();
+        }
     }
 }

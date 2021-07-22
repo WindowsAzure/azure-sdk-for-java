@@ -5,31 +5,34 @@
 package com.azure.resourcemanager.mysql.fluent.models;
 
 import com.azure.core.annotation.Fluent;
-import com.azure.core.management.ProxyResource;
 import com.azure.core.util.logging.ClientLogger;
 import com.azure.resourcemanager.mysql.models.VirtualNetworkRuleState;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/** A virtual network rule. */
+/** Properties of a virtual network rule. */
 @Fluent
-public final class VirtualNetworkRuleInner extends ProxyResource {
-    @JsonIgnore private final ClientLogger logger = new ClientLogger(VirtualNetworkRuleInner.class);
+public final class VirtualNetworkRuleProperties {
+    @JsonIgnore private final ClientLogger logger = new ClientLogger(VirtualNetworkRuleProperties.class);
 
     /*
-     * Resource properties.
+     * The ARM resource id of the virtual network subnet.
      */
-    @JsonProperty(value = "properties")
-    private VirtualNetworkRuleProperties properties;
+    @JsonProperty(value = "virtualNetworkSubnetId", required = true)
+    private String virtualNetworkSubnetId;
 
-    /**
-     * Get the properties property: Resource properties.
-     *
-     * @return the properties value.
+    /*
+     * Create firewall rule before the virtual network has vnet service
+     * endpoint enabled.
      */
-    private VirtualNetworkRuleProperties properties() {
-        return this.properties;
-    }
+    @JsonProperty(value = "ignoreMissingVnetServiceEndpoint")
+    private Boolean ignoreMissingVnetServiceEndpoint;
+
+    /*
+     * Virtual Network Rule State
+     */
+    @JsonProperty(value = "state", access = JsonProperty.Access.WRITE_ONLY)
+    private VirtualNetworkRuleState state;
 
     /**
      * Get the virtualNetworkSubnetId property: The ARM resource id of the virtual network subnet.
@@ -37,20 +40,17 @@ public final class VirtualNetworkRuleInner extends ProxyResource {
      * @return the virtualNetworkSubnetId value.
      */
     public String virtualNetworkSubnetId() {
-        return this.properties() == null ? null : this.properties().virtualNetworkSubnetId();
+        return this.virtualNetworkSubnetId;
     }
 
     /**
      * Set the virtualNetworkSubnetId property: The ARM resource id of the virtual network subnet.
      *
      * @param virtualNetworkSubnetId the virtualNetworkSubnetId value to set.
-     * @return the VirtualNetworkRuleInner object itself.
+     * @return the VirtualNetworkRuleProperties object itself.
      */
-    public VirtualNetworkRuleInner withVirtualNetworkSubnetId(String virtualNetworkSubnetId) {
-        if (this.properties() == null) {
-            this.properties = new VirtualNetworkRuleProperties();
-        }
-        this.properties().withVirtualNetworkSubnetId(virtualNetworkSubnetId);
+    public VirtualNetworkRuleProperties withVirtualNetworkSubnetId(String virtualNetworkSubnetId) {
+        this.virtualNetworkSubnetId = virtualNetworkSubnetId;
         return this;
     }
 
@@ -61,7 +61,7 @@ public final class VirtualNetworkRuleInner extends ProxyResource {
      * @return the ignoreMissingVnetServiceEndpoint value.
      */
     public Boolean ignoreMissingVnetServiceEndpoint() {
-        return this.properties() == null ? null : this.properties().ignoreMissingVnetServiceEndpoint();
+        return this.ignoreMissingVnetServiceEndpoint;
     }
 
     /**
@@ -69,13 +69,10 @@ public final class VirtualNetworkRuleInner extends ProxyResource {
      * service endpoint enabled.
      *
      * @param ignoreMissingVnetServiceEndpoint the ignoreMissingVnetServiceEndpoint value to set.
-     * @return the VirtualNetworkRuleInner object itself.
+     * @return the VirtualNetworkRuleProperties object itself.
      */
-    public VirtualNetworkRuleInner withIgnoreMissingVnetServiceEndpoint(Boolean ignoreMissingVnetServiceEndpoint) {
-        if (this.properties() == null) {
-            this.properties = new VirtualNetworkRuleProperties();
-        }
-        this.properties().withIgnoreMissingVnetServiceEndpoint(ignoreMissingVnetServiceEndpoint);
+    public VirtualNetworkRuleProperties withIgnoreMissingVnetServiceEndpoint(Boolean ignoreMissingVnetServiceEndpoint) {
+        this.ignoreMissingVnetServiceEndpoint = ignoreMissingVnetServiceEndpoint;
         return this;
     }
 
@@ -85,7 +82,7 @@ public final class VirtualNetworkRuleInner extends ProxyResource {
      * @return the state value.
      */
     public VirtualNetworkRuleState state() {
-        return this.properties() == null ? null : this.properties().state();
+        return this.state;
     }
 
     /**
@@ -94,8 +91,11 @@ public final class VirtualNetworkRuleInner extends ProxyResource {
      * @throws IllegalArgumentException thrown if the instance is not valid.
      */
     public void validate() {
-        if (properties() != null) {
-            properties().validate();
+        if (virtualNetworkSubnetId() == null) {
+            throw logger
+                .logExceptionAsError(
+                    new IllegalArgumentException(
+                        "Missing required property virtualNetworkSubnetId in model VirtualNetworkRuleProperties"));
         }
     }
 }
