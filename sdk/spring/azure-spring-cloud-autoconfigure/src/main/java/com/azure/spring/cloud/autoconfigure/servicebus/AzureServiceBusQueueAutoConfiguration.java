@@ -11,6 +11,7 @@ import com.azure.spring.integration.servicebus.converter.ServiceBusMessageConver
 import com.azure.spring.integration.servicebus.factory.DefaultServiceBusQueueClientFactory;
 import com.azure.spring.integration.servicebus.factory.ServiceBusConnectionStringProvider;
 import com.azure.spring.integration.servicebus.factory.ServiceBusQueueClientFactory;
+import com.azure.spring.integration.servicebus.health.InstrumentationManager;
 import com.azure.spring.integration.servicebus.queue.ServiceBusQueueOperation;
 import com.azure.spring.integration.servicebus.queue.ServiceBusQueueTemplate;
 import org.slf4j.Logger;
@@ -62,7 +63,8 @@ public class AzureServiceBusQueueAutoConfiguration {
 
         Assert.notNull(connectionString, "Service Bus connection string must not be null");
 
-        DefaultServiceBusQueueClientFactory clientFactory = new DefaultServiceBusQueueClientFactory(connectionString, properties.getTransportType());
+        DefaultServiceBusQueueClientFactory clientFactory = new DefaultServiceBusQueueClientFactory(connectionString,
+            properties.getTransportType());
         clientFactory.setNamespace(properties.getNamespace());
         clientFactory.setServiceBusNamespaceManager(namespaceManager);
         clientFactory.setServiceBusQueueManager(queueManager);
@@ -80,8 +82,15 @@ public class AzureServiceBusQueueAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean(ServiceBusQueueClientFactory.class)
     public ServiceBusQueueOperation queueOperation(ServiceBusQueueClientFactory factory,
-                                                   ServiceBusMessageConverter messageConverter) {
-        return new ServiceBusQueueTemplate(factory, messageConverter);
+                                                   ServiceBusMessageConverter messageConverter,
+                                                   InstrumentationManager instrumentationManager) {
+        return new ServiceBusQueueTemplate(factory, messageConverter, instrumentationManager);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public InstrumentationManager instrumentationManager() {
+        return new InstrumentationManager();
     }
 
 
