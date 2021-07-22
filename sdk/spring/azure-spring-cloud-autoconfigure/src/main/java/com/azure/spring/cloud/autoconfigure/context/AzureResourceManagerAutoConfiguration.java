@@ -8,7 +8,6 @@ import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.profile.AzureProfile;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.spring.cloud.context.core.api.AzureResourceMetadata;
-import com.azure.spring.identity.DefaultSpringCredentialBuilder;
 import com.azure.spring.cloud.context.core.impl.AzureManager;
 import com.azure.spring.cloud.context.core.impl.ResourceGroupManager;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -18,7 +17,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.util.StringUtils;
 
 import java.util.Locale;
@@ -114,15 +112,5 @@ public class AzureResourceManagerAutoConfiguration {
 
         return azureEnvironment;
     }
-
-    // TODO (xiada) shouldn't be here
-    @Bean
-    @ConditionalOnMissingBean
-    public TokenCredential credential(Environment environment) {
-        return new DefaultSpringCredentialBuilder().environment(environment)
-                                                   .alternativePrefix(AzureContextProperties.PREFIX)
-                                                   .build();
-    }
-
 
 }
