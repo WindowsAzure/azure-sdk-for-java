@@ -8,6 +8,7 @@ import com.azure.security.keyvault.jca.model.CertificateListResult;
 import com.azure.security.keyvault.jca.model.CertificatePolicy;
 import com.azure.security.keyvault.jca.model.KeyProperties;
 import com.azure.security.keyvault.jca.model.SecretBundle;
+import com.azure.security.keyvault.jca.model.PrivateKeyOperationResult;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -111,7 +112,6 @@ public class KeyVaultClient extends DelegateRestClient {
         this(keyVaultUri, tenantId, clientId, clientSecret, null);
     }
 
-
     /**
      * Constructor.
      *
@@ -140,6 +140,15 @@ public class KeyVaultClient extends DelegateRestClient {
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.managedIdentity = managedIdentity;
+    }
+
+    static KeyVaultClient createKeyVaultClientBySystemProperty() {
+        String keyVaultUri = System.getProperty("azure.keyvault.uri");
+        String tenantId = System.getProperty("azure.keyvault.tenant-id");
+        String clientId = System.getProperty("azure.keyvault.client-id");
+        String clientSecret = System.getProperty("azure.keyvault.client-secret");
+        String managedIdentity = System.getProperty("azure.keyvault.managed-identity");
+        return new KeyVaultClient(keyVaultUri, tenantId, clientId, clientSecret, managedIdentity);
     }
 
     /**
@@ -303,8 +312,9 @@ public class KeyVaultClient extends DelegateRestClient {
                     }
                 }
             }
+        } else {
+            return new KeyVaultPrivateKey(certificateBundle.getPolicy().getKeyProperties().getKty(), certificateBundle.getKid());
         }
-
         //
         // If the private key is not available the certificate cannot be
         // used for server side certificates or mTLS. Then we do not know
@@ -312,6 +322,32 @@ public class KeyVaultClient extends DelegateRestClient {
         //
         LOGGER.exiting("KeyVaultClient", "getKey", key);
         return key;
+    }
+
+    /**
+     * get signature by key vault
+     * @param digestName digestName
+     * @param digestValue digestValue
+     * @param kid The key id
+     * @return signature
+     */
+    public byte[] getSignedWithPrivateKey(String digestName, String digestValue, String kid) {
+        PrivateKeyOperationResult result = null;
+
+        String bodyString = String.format("{\"alg\": \"" + digestName + "\", \"value\": \"%s\"}", digestValue);
+
+        HashMap<String, String> headers = new HashMap<>();
+        headers.put("Authorization", "Bearer " + getAccessToken());
+        String url = String.format("%s/sign%s", kid, API_VERSION_POSTFIX);
+        String response = post(url, headers, bodyString, "application/json");
+        if (response != null) {
+            JsonConverter converter = JsonConverterFactory.createJsonConverter();
+            result = (PrivateKeyOperationResult) converter.fromJson(response, PrivateKeyOperationResult.class);
+        }
+        if (result != null) {
+            return Base64.getUrlDecoder().decode(result.getValue());
+        }
+        return new byte[0];
     }
 
     /**
@@ -342,6 +378,7 @@ public class KeyVaultClient extends DelegateRestClient {
         }
         byte[] bytes = Base64.getDecoder().decode(builder.toString());
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(bytes);
+        // TODO (zhicliu): support EC
         KeyFactory factory = KeyFactory.getInstance("RSA");
         return factory.generatePrivate(spec);
     }
