@@ -7,6 +7,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -24,7 +26,7 @@ public final class UrlBuilder {
     private String path;
 
     // LinkedHashMap preserves insertion order
-    private final Map<String, String> query = new LinkedHashMap<>();
+    private final Map<String, QueryParameter> query = new LinkedHashMap<>();
 
     /**
      * Set the scheme/protocol that will be used to build the final URL.
@@ -138,9 +140,29 @@ public final class UrlBuilder {
      * @param queryParameterName The name of the query parameter.
      * @param queryParameterEncodedValue The encoded value of the query parameter.
      * @return The provided query parameter name and encoded value to query string for the final URL.
+     * @throws NullPointerException if {@code queryParameterName} or {@code queryParameterEncodedValue} are null.
      */
     public UrlBuilder setQueryParameter(String queryParameterName, String queryParameterEncodedValue) {
-        query.put(queryParameterName, queryParameterEncodedValue);
+        query.put(queryParameterName, new QueryParameter(queryParameterName, queryParameterEncodedValue));
+        return this;
+    }
+
+    /**
+     * Append the provided query parameter name and encoded value to query string for the final URL.
+     *
+     * @param queryParameterName The name of the query parameter.
+     * @param queryParameterEncodedValue The encoded value of the query parameter.
+     * @return The provided query parameter name and encoded value to query string for the final URL.
+     * @throws NullPointerException if {@code queryParameterName} or {@code queryParameterEncodedValue} are null.
+     */
+    public UrlBuilder appendQueryParameter(String queryParameterName, String queryParameterEncodedValue) {
+        query.compute(queryParameterName, (key, value) -> {
+            if (value == null) {
+                return new QueryParameter(queryParameterName, queryParameterEncodedValue);
+            }
+            value.addValue(queryParameterEncodedValue);
+            return value;
+        });
         return this;
     }
 
@@ -154,8 +176,23 @@ public final class UrlBuilder {
         if (query == null || query.isEmpty()) {
             this.query.clear();
         } else {
+            clearQuery();
             with(query, UrlTokenizerState.QUERY);
         }
+        return this;
+    }
+
+    /**
+     * Clear the query that will be used to build the final URL.
+     *
+     * @return This UrlBuilder so that multiple setters can be chained together.
+     */
+    public UrlBuilder clearQuery() {
+        if (query.isEmpty()) {
+            return this;
+        }
+
+        query.clear();
         return this;
     }
 
@@ -165,7 +202,40 @@ public final class UrlBuilder {
      * @return the query that has been assigned to this UrlBuilder.
      */
     public Map<String, String> getQuery() {
-        return query;
+        // This contains a map of key=value query parameters, replacing
+        // multiple values for a single key with a list of values under the same name,
+        // joined together with a comma. As discussed in https://github.com/Azure/azure-sdk-for-java/pull/21203.
+        final Map<String, String> singleKeyValueQuery =
+            this.query.entrySet()
+                      .stream()
+                      .collect(Collectors.toMap(
+                            e -> e.getKey(),
+                            e -> {
+                                QueryParameter parameter = e.getValue();
+                                String value = null;
+
+                                if (parameter != null) {
+                                    // join all parameters with a comma.
+                                    // name=a&name=b&name=c will become
+                                    // name=a,b,c
+                                    value = String.join(",", parameter.getValuesList());
+                                }
+
+                                return value;
+                            }
+                        ));
+
+        return singleKeyValueQuery;
+    }
+
+    /**
+     * Get the query that has been assigned to this UrlBuilder, with {@link QueryParameter} as the
+     * value type.
+     *
+     * @return the query that has been assigned to this UrlBuilder.
+     */
+    public Map<String, QueryParameter> getQueryParameters() {
+        return this.query;
     }
 
     /**
@@ -178,13 +248,15 @@ public final class UrlBuilder {
         }
 
         StringBuilder queryBuilder = new StringBuilder("?");
-        for (Map.Entry<String, String> entry : query.entrySet()) {
-            if (queryBuilder.length() > 1) {
-                queryBuilder.append("&");
+        for (Map.Entry<String, QueryParameter> entry : query.entrySet()) {
+            for (String queryValue : entry.getValue().getValuesList()) {
+                if (queryBuilder.length() > 1) {
+                    queryBuilder.append("&");
+                }
+                queryBuilder.append(entry.getKey());
+                queryBuilder.append("=");
+                queryBuilder.append(queryValue);
             }
-            queryBuilder.append(entry.getKey());
-            queryBuilder.append("=");
-            queryBuilder.append(entry.getValue());
         }
 
         return queryBuilder.toString();
@@ -227,9 +299,9 @@ public final class UrlBuilder {
                         for (String entry : queryString.split("&")) {
                             String[] nameValue = entry.split("=");
                             if (nameValue.length == 2) {
-                                setQueryParameter(nameValue[0], nameValue[1]);
+                                appendQueryParameter(nameValue[0], nameValue[1]);
                             } else {
-                                setQueryParameter(nameValue[0], "");
+                                appendQueryParameter(nameValue[0], "");
                             }
                         }
                     }
